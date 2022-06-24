@@ -1,5 +1,41 @@
 # flighty
 
+## Create service code
+
+Assume kaniko was already used to create an image. Now how do we run it?
+
+First, upload the task definition:
+
+```
+aws ecs register-task-definition \
+  --cli-input-json file://ecs-service-definition.json
+```
+
+Then run it:
+
+```
+aws ecs create-service \
+    --task-definition flighty-demo:1 \
+    --cli-input-json file://ecs-run-service.json
+```
+
+Get logs:
+
+```
+### Get logs
+
+```
+
+aws logs get-log-events \
+ --log-group-name /ecs/Flighty \
+ --log-stream-name $(aws logs describe-log-streams \
+ --log-group-name /ecs/Flighty \
+ --query 'logStreams[0].logStreamName' --output text)
+
+```
+
+```
+
 ## Kaniko code
 
 ### Build Kaniko image
