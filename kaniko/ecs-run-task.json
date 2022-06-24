@@ -1,0 +1,13 @@
+{
+    "cluster": "DevCluster",
+    "count": 1,
+    "launchType": "FARGATE",
+    "networkConfiguration": {
+        "awsvpcConfiguration": {
+            "subnets": ["subnet-0f9e7a9c7c86e1ecc"],
+            "securityGroups": ["sg-019453ec44d351a52"],
+            "assignPublicIp": "ENABLED"
+        }
+    },
+    "platformVersion": "1.4.0"
+}
