@@ -1,0 +1,32 @@
+{
+  "family": "kaniko-demo",
+  "taskRoleArn": "arn:aws:iam::701906161514:role/kaniko_ecs_role",
+  "executionRoleArn": "arn:aws:iam::701906161514:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "kaniko",
+      "image": "701906161514.dkr.ecr.us-west-1.amazonaws.com/kaniko-builder:executor",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "kaniko-builder",
+          "awslogs-region": "us-west-1",
+          "awslogs-stream-prefix": "kaniko"
+        }
+      },
+      "command": [
+        "--context",
+        "git://github.com/FlightyAI/docker-test.git",
+        "--dockerfile",
+        "./app/Dockerfile",
+        "--destination",
+        "701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:latest",
+        "--force"
+      ]
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024"
+}

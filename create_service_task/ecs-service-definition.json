@@ -1,0 +1,22 @@
+{
+  "family": "flighty-demo",
+  "executionRoleArn": "arn:aws:iam::701906161514:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "flighty",
+      "image": "701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:latest",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/Flighty",
+          "awslogs-region": "us-west-1",
+          "awslogs-stream-prefix": "testdeployment"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024"
+}
