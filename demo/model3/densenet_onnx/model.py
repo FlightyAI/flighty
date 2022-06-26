@@ -1,7 +1,5 @@
-import os
-import pathlib
 import random
-import sys
+import time
 
 
 class Model():
@@ -12,5 +10,6 @@ class Model():
     output = []
     for _ in range(128):
       output.append(random.random())
+    time.sleep(0.5)
 
     return {'output': output}

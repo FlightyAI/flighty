@@ -22,12 +22,12 @@ ctx = snowflake.connector.connect(account=snowflake_account,
 cs = ctx.cursor() 
 cs.execute("USE DATABASE flighty")
 
-def log_to_snowflake(input, prod, endpoint, model_name, output):
+def log_to_snowflake(input, prod, endpoint, model_name, output, latency=4):
 
   statement = ("insert into model_data.model_data"
   f" select to_timestamp('{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}'), "
   f"'{endpoint}', '{model_name}', {json.dumps(input)}, {json.dumps(output)}, {'true' if prod else 'false'}, "
-  f" {random.randint(1,5)};")
+  f" {float(latency)};")
   statement = statement.replace('"', "'") # Snowflake expects single quotes even in JSON
   cs.execute(statement)
 

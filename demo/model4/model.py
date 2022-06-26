@@ -13,7 +13,4 @@ class Model():
     from flighty import Flighty
     features = Flighty.invoke(endpoint='doc_rec', model='gpu_featurizer', data=data)
     output = Flighty.invoke(endpoint='doc_rec', model='xgboost', data={"inputs": features['output']})
-    # test = list(range(0,50))
-    # random.shuffle(test)
-    # output = {'physician_preference': test[:10]}
     return output

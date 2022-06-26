@@ -23,20 +23,24 @@ from snowflake_log import log_to_snowflake
 
 class Flighty():
   endpoints = {}
-  def __init__(self, docker_wait=25, deploy_wait=14, traffic_wait=5):
-    with open('config.txt') as f:
+  cache = {}
+  cache_enabled = False
+  def __init__(self, ):
+    pass
+
+  @classmethod
+  def initialize(cls, docker_wait=25, deploy_wait=14, traffic_wait=5):
+    this_directory = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(this_directory, 'config.txt')) as f:
       for line in f.readlines():
         parsed = line.split(' = ')
         if (parsed[0] == 'ORGANIZATION'):
-          Flighty.organization_name = parsed[1].rstrip().lower()
+          cls.organization_name = parsed[1].rstrip().lower()
 
-    Flighty.base_url = f'https://flighty.ai/{Flighty.organization_name}'
-    Flighty.docker_wait = docker_wait
-    Flighty.deploy_wait = deploy_wait
-    Flighty.traffic_wait = traffic_wait
-    
-  @classmethod
-  def initialize(cls):
+    cls.base_url = f'https://flighty.ai/{cls.organization_name}'
+    cls.docker_wait = docker_wait
+    cls.deploy_wait = deploy_wait
+    cls.traffic_wait = traffic_wait
     cls.wait_for(1)
     return (f'Successfully initiated connection with organization {cls.organization_name}, base URL {cls.base_url}')
 
@@ -80,12 +84,10 @@ class Flighty():
       model = model3
     elif model_path == 'model4':
       model = model4
-    # elif model_path == 'model4':
-    #   model = model4
-    # if model_path != 'model4':
     model = model.Model()
-    # else:
-    #   pass
+
+    # create cache entry to avoid key errors in invoke()
+    cls.cache[model_name] = {}
     cls.wait_for(1, f'Found model at {model_path}')
     cls.wait_for(cls.docker_wait, f'Creating Docker image for model {model_name}')
     cls.wait_for(cls.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
@@ -150,10 +152,19 @@ class Flighty():
 
   @classmethod
   def invoke(cls, endpoint='doc_rec', model=None, data=None):
+    t1 = time.time()
+    cache_hit = False
     if model:
       cls.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
-      output = cls.endpoints[endpoint][model]['pyobj'].predict(data)
-      log_to_snowflake(data, False, endpoint, model, output)
+      if cls.cache_enabled:
+        try:
+          output = cls.cache[model][json.dumps(data)]
+          cache_hit = True
+        except KeyError:
+          pass
+      if not(cache_hit):
+        output = cls.endpoints[endpoint][model]['pyobj'].predict(data)
+      log_to_snowflake(data, False, endpoint, model, output, time.time()-t1)
     else:
       cls.wait_for(1, f'Invoking endpoint {endpoint}')
       traffic_number = random.randint(0, 99)
@@ -162,17 +173,35 @@ class Flighty():
         if details["prod"] > 0:
           current_sum += details["prod"]
           if current_sum > traffic_number: # do our prod traffic split
-            output = cls.endpoints[endpoint][model_name]['pyobj'].predict(data)
-            log_to_snowflake(data, True, endpoint, model_name, output)
+            
+            if cls.cache_enabled:
+              try:
+                output = cls.cache[model_name][json.dumps(data)]
+                cache_hit = True
+              except KeyError:
+                pass
+            if not(cache_hit):
+              output = cls.endpoints[endpoint][model_name]['pyobj'].predict(data)
+            log_to_snowflake(data, True, endpoint, model_name, output, time.time()-t1)
           if details["shadow"] > traffic_number: # replicate to shadow if necessary
             shadow_out = cls.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
-            log_to_snowflake(data, False, endpoint, model_name, shadow_out)
+            log_to_snowflake(data, False, endpoint, model_name, shadow_out, time.time()-t1)
+
+    if cls.cache_enabled:
+      cache_key = json.dumps(data)
+      cls.cache[model][cache_key] = output
     return output
 
+  @classmethod
+  def enable_caching(cls):
+    cls.cache_enabled = True
+
+  @classmethod
   def show_endpoints(cls):
     return cls.pretty_print_json(cls.endpoints)
 
-  def pretty_print_json(input):
+  @classmethod
+  def pretty_print_json(cls, input):
     return json.dumps(input, indent=4, sort_keys=True)
 
   @classmethod

@@ -1,13 +1,10 @@
-import json
-
 from flighty import Flighty
 
-Flighty.initialize()
+Flighty.initialize(docker_wait=1, deploy_wait=1, traffic_wait=1)
 Flighty.create_endpoint('doc_rec')
 Flighty.create_model('doc_rec', 'rules', 'model1')
 Flighty.create_model('doc_rec', 'xgboost', 'model2')
 Flighty.update_endpoint('doc_rec', traffic={'rules': {'prod': 100, 'shadow': 0}, 'xgboost': {'prod': 0, 'shadow': 100}})
-
 
 # test shadow traffic logic
 Flighty.invoke('doc_rec', None, {'Survey_responses': {1: 'I am looking for help'}})
@@ -18,4 +15,9 @@ Flighty.invoke('doc_rec', 'gpu_featurizer', {'Survey_responses': {1: 'I am looki
 
 # Add in CPU model that invokes GPU model
 Flighty.create_model('doc_rec', 'hybrid_cpu_gpu', 'model4')
+Flighty.invoke('doc_rec', 'hybrid_cpu_gpu', {'Survey_responses': {1: 'I am looking for help'}})
+
+# Enable caching
+Flighty.enable_caching()
+Flighty.invoke('doc_rec', 'hybrid_cpu_gpu', {'Survey_responses': {1: 'I am looking for help'}})
 Flighty.invoke('doc_rec', 'hybrid_cpu_gpu', {'Survey_responses': {1: 'I am looking for help'}})
