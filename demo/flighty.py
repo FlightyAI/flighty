@@ -22,50 +22,52 @@ from snowflake_log import log_to_snowflake
 
 
 class Flighty():
-  #endpoints = {}
+  endpoints = {}
   def __init__(self, docker_wait=25, deploy_wait=14, traffic_wait=5):
     with open('config.txt') as f:
       for line in f.readlines():
         parsed = line.split(' = ')
         if (parsed[0] == 'ORGANIZATION'):
-          self.organization_name = parsed[1].rstrip().lower()
+          Flighty.organization_name = parsed[1].rstrip().lower()
 
-          # print(self.organization_name)
-    self.base_url = f'https://flighty.ai/{self.organization_name}'
-    self.endpoints = {}
-    self.docker_wait = docker_wait
-    self.deploy_wait = deploy_wait
-    self.traffic_wait = traffic_wait
+    Flighty.base_url = f'https://flighty.ai/{Flighty.organization_name}'
+    Flighty.docker_wait = docker_wait
+    Flighty.deploy_wait = deploy_wait
+    Flighty.traffic_wait = traffic_wait
     
-  def initialize(self):
-    self.wait_for(1)
-    return (f'Successfully initiated connection with organization {self.organization_name}, base URL {self.base_url}')
+  @classmethod
+  def initialize(cls):
+    cls.wait_for(1)
+    return (f'Successfully initiated connection with organization {cls.organization_name}, base URL {cls.base_url}')
 
-  def endpoint_exists(self, name):
-    if name not in self.endpoints.keys():
+  @classmethod
+  def endpoint_exists(cls, name):
+    if name not in cls.endpoints.keys():
       print(f'Endpoint {name} does not exist. Please create the endpoint first by calling create_endpoint()')
       return False
     return True
 
-  def create_endpoint(self, name):
-    if name in self.endpoints.keys():
+  @classmethod
+  def create_endpoint(cls, name):
+    if name in cls.endpoints.keys():
         print(f'Endpoint with name {name} already exists. Please delete that endpoint or choose a different name')
         return ''
-    self.endpoints[name] = {}
-    #output = {'status': "Success", 'name': f'{name}', 'base_url': f'{self.base_url}/{name}'}
-    self.wait_for(3)
-    return (f'Successfully created endpoint with URL {self.base_url}/{name}')
-    #return self.pretty_print_json(output)
+    cls.endpoints[name] = {}
 
-  def create_model(self, endpoint, model_name, model_path='./model1'):
-    if not self.endpoint_exists(endpoint):
+    cls.wait_for(3)
+    return (f'Successfully created endpoint with URL {cls.base_url}/{name}')
+
+
+  @classmethod
+  def create_model(cls, endpoint, model_name, model_path='./model1'):
+    if not cls.endpoint_exists(endpoint):
       return ''
 
     if not exists(model_path):
       print(f'Model at path {model_path} not found. Please check the path and try again.')
       return ''
 
-    if model_name in self.endpoints[endpoint].keys():
+    if model_name in cls.endpoints[endpoint].keys():
       print(f'Model with name {model_name} already exists behind endpoint {endpoint}. '
         'Please select a different name or delete the existing model before continuing.')
       return ''
@@ -82,30 +84,30 @@ class Flighty():
     #   model = model4
 
     model = model.Model()
-    self.wait_for(1, f'Found model at {model_path}')
-    self.wait_for(self.docker_wait, f'Creating Docker image for model {model_name}')
-    self.wait_for(self.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
-    if len(self.endpoints[endpoint]) == 0:
-      self.wait_for(self.traffic_wait, f'Updating endpoint to serve 100% of traffic with model {model_name}')
-      self.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 100, 'shadow': 0}
+    cls.wait_for(1, f'Found model at {model_path}')
+    cls.wait_for(cls.docker_wait, f'Creating Docker image for model {model_name}')
+    cls.wait_for(cls.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
+    if len(cls.endpoints[endpoint]) == 0:
+      cls.wait_for(cls.traffic_wait, f'Updating endpoint to serve 100% of traffic with model {model_name}')
+      cls.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 100, 'shadow': 0}
     else:
-      self.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 0, 'shadow': 0}
+      cls.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 0, 'shadow': 0}
     return (f'Successfully deployed model {model_name}. To invoke this model directly, '
-      f'call {self.base_url}/{endpoint}/{model_name}')
+      f'call {cls.base_url}/{endpoint}/{model_name}')
 
 
-  def update_endpoint(self, endpoint, traffic):
-    if not self.endpoint_exists(endpoint):
+  def update_endpoint(cls, endpoint, traffic):
+    if not cls.endpoint_exists(endpoint):
       return ''
     
     for model_name in traffic.keys():
-      if model_name not in self.endpoints[endpoint].keys():
+      if model_name not in cls.endpoints[endpoint].keys():
         print(f'You tried to adjust traffic for model name {model_name}, which does not exist'
           f'behind endpoint {endpoint}. Please create the model first with create_model')
 
  
-    models_not_yet_seen = set(self.endpoints[endpoint].keys())
-    new_traffic = copy.deepcopy(self.endpoints[endpoint])
+    models_not_yet_seen = set(cls.endpoints[endpoint].keys())
+    new_traffic = copy.deepcopy(cls.endpoints[endpoint])
     for model, traffic_split in traffic.items():
       sum_check = 0
       try:
@@ -138,38 +140,39 @@ class Flighty():
       return ''
     
 
-    self.endpoints[endpoint] = new_traffic
-    self.wait_for(self.traffic_wait, f'Updating traffic to endpoint {endpoint}')
-    return f'Updated traffic for endpoint {endpoint} to be {self.pretty_print_json(traffic)}'
+    cls.endpoints[endpoint] = new_traffic
+    cls.wait_for(cls.traffic_wait, f'Updating traffic to endpoint {endpoint}')
+    return f'Updated traffic for endpoint {endpoint} to be {cls.pretty_print_json(traffic)}'
 
-
-  def invoke(self, endpoint='doc_rec', model=None, data=None):
+  @classmethod
+  def invoke(cls, endpoint='doc_rec', model=None, data=None):
     if model:
-      self.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
-      output = self.endpoints[endpoint][model]['pyobj'].predict(data)
+      cls.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
+      output = cls.endpoints[endpoint][model]['pyobj'].predict(data)
       log_to_snowflake(data, False, endpoint, model, output)
     else:
-      self.wait_for(1, f'Invoking endpoint {endpoint}')
+      cls.wait_for(1, f'Invoking endpoint {endpoint}')
       traffic_number = random.randint(0, 99)
       current_sum = 0
-      for model_name, details in self.endpoints[endpoint].items():
+      for model_name, details in cls.endpoints[endpoint].items():
         if details["prod"] > 0:
           current_sum += details["prod"]
           if current_sum > traffic_number: # do our prod traffic split
-            output = self.endpoints[endpoint][model_name]['pyobj'].predict(data)
+            output = cls.endpoints[endpoint][model_name]['pyobj'].predict(data)
             log_to_snowflake(data, True, endpoint, model_name, output)
           if details["shadow"] > traffic_number: # replicate to shadow if necessary
-            shadow_out = self.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
+            shadow_out = cls.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
             log_to_snowflake(data, False, endpoint, model_name, shadow_out)
-    return self.pretty_print_json(output)
+    return cls.pretty_print_json(output)
 
-  def show_endpoints(self):
-    return self.pretty_print_json(self.endpoints)
+  def show_endpoints(cls):
+    return cls.pretty_print_json(cls.endpoints)
 
-  def pretty_print_json(self, input):
+  def pretty_print_json(input):
     return json.dumps(input, indent=4, sort_keys=True)
 
-  def wait_for(self, n, status_message='Working'):
+  @classmethod
+  def wait_for(cls, n, status_message='Working'):
     print(status_message, end='')
     for i in range(n):
       print('.', end='')
