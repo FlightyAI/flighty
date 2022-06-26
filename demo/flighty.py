@@ -1,8 +1,10 @@
 
 import copy
+import datetime
 import json
 import os
 import random
+import snowflake.connector
 import sys
 import time
 
@@ -19,6 +21,16 @@ class Flighty():
         parsed = line.split(' = ')
         if (parsed[0] == 'ORGANIZATION'):
           self.organization_name = parsed[1].rstrip().lower()
+        elif (parsed[0] == 'SNOWFLAKE_USER'):
+          self.snowflake_user = parsed[1].rstrip().lower()
+        elif (parsed[0] == 'SNOWFLAKE_PASSWORD'):
+          self.snowflake_password = parsed[1].rstrip()
+        elif (parsed[0] == 'SNOWFLAKE_ACCOUNT'):
+          self.snowflake_account = parsed[1].rstrip().lower()   
+    ctx = snowflake.connector.connect(account=self.snowflake_account, 
+        user=self.snowflake_user, password=self.snowflake_password)
+    self.cs = ctx.cursor() 
+    self.cs.execute("USE DATABASE flighty")
           # print(self.organization_name)
     self.base_url = f'https://flighty.ai/{self.organization_name}'
     self.endpoints = {}
@@ -60,10 +72,11 @@ class Flighty():
       return ''
 
     if model_path == 'model1':
-      model = model1.Model()
+      model = model1
     elif model_path == 'model2':
-      model = model2.Model()
+      model = model2
 
+    model = model.Model(self.snowflake_user, self.snowflake_password, self.snowflake_account)
     self.wait_for(1, f'Found model at {model_path}')
     self.wait_for(self.docker_wait, f'Creating Docker image for model {model_name}')
     self.wait_for(self.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
@@ -117,13 +130,21 @@ class Flighty():
     self.wait_for(self.traffic_wait, f'Updating traffic to endpoint {endpoint}')
     return f'Updated traffic for endpoint {endpoint} to be {self.pretty_print_json(traffic)}'
 
+  def log_to_snowflake(self, data, prod, endpoint, model_name, output_array):
+    string_construct = str(output_array[:1][0])
+    for item in output_array[1:10]:
+      string_construct += f', {item}'
+    statement = ("insert into model_data.model_data"
+    f" select '{data}', array_construct({string_construct}), {'true' if prod else 'false'}, '{endpoint}',"
+    f" '{model_name}', to_timestamp('{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}'), {random.randint(1,5)};")
+    self.cs.execute(statement)
 
-  
-  def invoke(self, endpoint, model, data):
+  def invoke(self, endpoint, data, model=None):
     
     if model:
       self.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
       output = self.endpoints[endpoint][model]['pyobj'].predict(data)
+      self.log_to_snowflake(data, False, endpoint, model, output['physician_preference'])
     else:
       self.wait_for(1, f'Invoking endpoint {endpoint}')
       traffic_number = random.randint(0, 99)
@@ -133,8 +154,10 @@ class Flighty():
           current_sum += details["prod"]
           if current_sum > traffic_number: # do our prod traffic split
             output = self.endpoints[endpoint][model_name]['pyobj'].predict(data)
-        if details["shadow"] > traffic_number: # replicate to shadow if necessary
-          self.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
+            self.log_to_snowflake(data, True, endpoint, model_name, output['physician_preference'])
+          if details["shadow"] > traffic_number: # replicate to shadow if necessary
+            shadow_out = self.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
+            self.log_to_snowflake(data, False, endpoint, model_name, shadow_out['physician_preference'])
     return self.pretty_print_json(output)
 
   def show_endpoints(self):
@@ -182,6 +205,7 @@ def demo_setup():
   create_model('doc_rec', 'rules', 'model1')
   create_model('doc_rec', 'xgboost', 'model2')
   update_endpoint('doc_rec', traffic=json.dumps({'rules': {'prod': 100, 'shadow': 0}, 'xgboost': {'prod': 0, 'shadow': 5}}))
+  invoke('doc_rec', 'lah', None)
 # def create_endpoint()
 
 if (__name__ == '__main__'):

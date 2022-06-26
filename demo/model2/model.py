@@ -1,7 +1,7 @@
 import random
 
 class Model():
-  def __init__(self):
+  def __init__(self, snowflake_user, snowflake_password, snowflake_account):
     pass
 
   def predict(self, data, type="prod"):
