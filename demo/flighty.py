@@ -82,13 +82,15 @@ class Flighty():
       model = model4
     # elif model_path == 'model4':
     #   model = model4
-    if model_path != 'model4':
-      model = model.Model()
-    else:
-      pass
+    # if model_path != 'model4':
+    model = model.Model()
+    # else:
+    #   pass
     cls.wait_for(1, f'Found model at {model_path}')
     cls.wait_for(cls.docker_wait, f'Creating Docker image for model {model_name}')
     cls.wait_for(cls.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
+
+    # Serve 100% of prod traffic with this model, if it's the first model behind the endpoint
     if len(cls.endpoints[endpoint]) == 0:
       cls.wait_for(cls.traffic_wait, f'Updating endpoint to serve 100% of traffic with model {model_name}')
       cls.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 100, 'shadow': 0}
@@ -97,7 +99,7 @@ class Flighty():
     return (f'Successfully deployed model {model_name}. To invoke this model directly, '
       f'call {cls.base_url}/{endpoint}/{model_name}')
 
-
+  @classmethod
   def update_endpoint(cls, endpoint, traffic):
     if not cls.endpoint_exists(endpoint):
       return ''
@@ -110,8 +112,8 @@ class Flighty():
  
     models_not_yet_seen = set(cls.endpoints[endpoint].keys())
     new_traffic = copy.deepcopy(cls.endpoints[endpoint])
+    sum_check = 0
     for model, traffic_split in traffic.items():
-      sum_check = 0
       try:
         prod = traffic_split["prod"]
         shadow = traffic_split["shadow"]
@@ -165,7 +167,7 @@ class Flighty():
           if details["shadow"] > traffic_number: # replicate to shadow if necessary
             shadow_out = cls.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
             log_to_snowflake(data, False, endpoint, model_name, shadow_out)
-    return cls.pretty_print_json(output)
+    return output
 
   def show_endpoints(cls):
     return cls.pretty_print_json(cls.endpoints)
