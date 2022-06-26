@@ -1,13 +1,16 @@
 
 import copy
 import json
-import model1.main as model1
-import model2.main as model2
+import os
 import random
 import sys
 import time
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
 from os.path import exists
+from model1 import model as model1
+from model2 import model as model2
 
 class Flighty():
   def __init__(self, docker_wait=25, deploy_wait=14, traffic_wait=5):
@@ -56,9 +59,9 @@ class Flighty():
         'Please select a different name or delete the existing model before continuing.')
       return ''
 
-    if model_name == 'model1':
+    if model_path == 'model1':
       model = model1.Model()
-    elif model_name == 'model2':
+    elif model_path == 'model2':
       model = model2.Model()
 
     self.wait_for(1, f'Found model at {model_path}')
@@ -120,8 +123,18 @@ class Flighty():
     
     if model:
       self.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
+      output = self.endpoints[endpoint][model]['pyobj'].predict(data)
     else:
       self.wait_for(1, f'Invoking endpoint {endpoint}')
+      traffic_number = random.randint(0, 99)
+      current_sum = 0
+      for model_name, details in self.endpoints[endpoint].items():
+        if details["prod"] > 0:
+          current_sum += details["prod"]
+          if current_sum > traffic_number: # do our prod traffic split
+            output = self.endpoints[endpoint][model_name]['pyobj'].predict(data)
+        if details["shadow"] > traffic_number: # replicate to shadow if necessary
+          self.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
     return self.pretty_print_json(output)
 
   def show_endpoints(self):
