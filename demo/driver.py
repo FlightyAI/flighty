@@ -1,5 +1,6 @@
 from flighty import Flighty
 
+# Initialize endpoint with two models, one receiving only shadow traffic
 Flighty.initialize(name='great_clinic')
 Flighty.create_endpoint(name='doc_rec')
 Flighty.create_model(endpoint='doc_rec', model_name='rules', model_path='model1')
@@ -7,7 +8,7 @@ Flighty.show_endpoints()
 Flighty.create_model(endpoint='doc_rec', model_name='xgboost', model_path='model2')
 Flighty.update_endpoint(endpoint='doc_rec', traffic={'rules': {'prod': 100, 'shadow': 0}, 'xgboost': {'prod': 0, 'shadow': 100}})
 
-# test shadow traffic logic
+# Test shadow traffic logic
 Flighty.invoke(endpoint='doc_rec', model=None, data={'Survey_responses': {1: 'I have some pain in my knee'}})
 
 # Test GPU model alone
