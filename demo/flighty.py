@@ -1,5 +1,8 @@
 
+import copy
 import json
+import model1.main as model1
+import model2.main as model2
 import random
 import sys
 import time
@@ -53,14 +56,19 @@ class Flighty():
         'Please select a different name or delete the existing model before continuing.')
       return ''
 
+    if model_name == 'model1':
+      model = model1.Model()
+    elif model_name == 'model2':
+      model = model2.Model()
+
     self.wait_for(1, f'Found model at {model_path}')
     self.wait_for(self.docker_wait, f'Creating Docker image for model {model_name}')
     self.wait_for(self.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
     if len(self.endpoints[endpoint]) == 0:
       self.wait_for(self.traffic_wait, f'Updating endpoint to serve 100% of traffic with model {model_name}')
-      self.endpoints[endpoint][model_name] = {'prod': 100, 'shadow': 0}
+      self.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 100, 'shadow': 0}
     else:
-      self.endpoints[endpoint][model_name] = {'prod': 0, 'shadow': 0}
+      self.endpoints[endpoint][model_name] = {'pyobj': model, 'prod': 0, 'shadow': 0}
     return (f'Successfully deployed model {model_name}. To invoke this model directly, '
       f'call {self.base_url}/{endpoint}/{model_name}')
 
@@ -74,12 +82,16 @@ class Flighty():
         print(f'You tried to adjust traffic for model name {model_name}, which does not exist'
           f'behind endpoint {endpoint}. Please create the model first with create_model')
 
-    sum_check = 0
+ 
     models_not_yet_seen = set(self.endpoints[endpoint].keys())
+    new_traffic = copy.deepcopy(self.endpoints[endpoint])
     for model, traffic_split in traffic.items():
+      sum_check = 0
       try:
         prod = traffic_split["prod"]
         shadow = traffic_split["shadow"]
+        new_traffic[model]["prod"] = prod
+        new_traffic[model]["shadow"] = shadow
         if prod < 0 or shadow < 0:
           print(f'You entered in a negative traffic value for either prod or shadow for model {model}. '
           'Please enter a positive value and try again')
@@ -98,16 +110,14 @@ class Flighty():
     if (abs(sum_check-100.) > 0.0001):
       print(f'You entered in a prod traffic split that sums to {sum_check}. Please enter in values that sum to 100')
 
-    self.endpoints[endpoint] = traffic
+    self.endpoints[endpoint] = new_traffic
     self.wait_for(self.traffic_wait, f'Updating traffic to endpoint {endpoint}')
     return f'Updated traffic for endpoint {endpoint} to be {self.pretty_print_json(traffic)}'
 
 
   
   def invoke(self, endpoint, model, data):
-    test = list(range(0,50))
-    random.shuffle(test)
-    output = {'physician_preference': test[:10]}
+    
     if model:
       self.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
     else:
