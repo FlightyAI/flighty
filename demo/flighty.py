@@ -16,11 +16,13 @@ sys.path.insert(0, current_directory)
 from os.path import exists
 from model1 import model as model1
 from model2 import model as model2
-from model3 import model as model3
+from model3.densenet_onnx import model as model3
+from model4 import model as model4
 from snowflake_log import log_to_snowflake
 
 
 class Flighty():
+  #endpoints = {}
   def __init__(self, docker_wait=25, deploy_wait=14, traffic_wait=5):
     with open('config.txt') as f:
       for line in f.readlines():
@@ -72,6 +74,12 @@ class Flighty():
       model = model1
     elif model_path == 'model2':
       model = model2
+    elif model_path == 'model3':
+      model = model3
+    elif model_path == 'model4':
+      model = model4
+    # elif model_path == 'model4':
+    #   model = model4
 
     model = model.Model()
     self.wait_for(1, f'Found model at {model_path}')
@@ -135,11 +143,11 @@ class Flighty():
     return f'Updated traffic for endpoint {endpoint} to be {self.pretty_print_json(traffic)}'
 
 
-  def invoke(self, endpoint, data, model=None):
+  def invoke(self, endpoint='doc_rec', model=None, data=None):
     if model:
       self.wait_for(1, f'Invoking model {model} behind endpoint {endpoint}')
       output = self.endpoints[endpoint][model]['pyobj'].predict(data)
-      log_to_snowflake(data, False, endpoint, model, output['physician_preference'])
+      log_to_snowflake(data, False, endpoint, model, output)
     else:
       self.wait_for(1, f'Invoking endpoint {endpoint}')
       traffic_number = random.randint(0, 99)
@@ -149,10 +157,10 @@ class Flighty():
           current_sum += details["prod"]
           if current_sum > traffic_number: # do our prod traffic split
             output = self.endpoints[endpoint][model_name]['pyobj'].predict(data)
-            log_to_snowflake(data, True, endpoint, model_name, output['physician_preference'])
+            log_to_snowflake(data, True, endpoint, model_name, output)
           if details["shadow"] > traffic_number: # replicate to shadow if necessary
             shadow_out = self.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
-            log_to_snowflake(data, False, endpoint, model_name, shadow_out['physician_preference'])
+            log_to_snowflake(data, False, endpoint, model_name, shadow_out)
     return self.pretty_print_json(output)
 
   def show_endpoints(self):
@@ -182,7 +190,7 @@ def create_endpoint(name):
 def create_model(endpoint, model_name, model_path):
   print(f.create_model(endpoint, model_name, model_path))
 
-def invoke(endpoint, model=None, data=None):
+def invoke(endpoint=None, model=None, data=None):
   print(f.invoke(endpoint, model, data))
 
 def update_endpoint(endpoint, traffic):
@@ -193,18 +201,23 @@ def show_endpoints():
   print(f.show_endpoints())
   
 def demo_setup():
-  global f
-  #f = Flighty(docker_wait=1, deploy_wait=1, traffic_wait=1)
   initialize()
   create_endpoint('doc_rec')
   create_model('doc_rec', 'rules', 'model1')
   create_model('doc_rec', 'xgboost', 'model2')
   update_endpoint('doc_rec', traffic=json.dumps({'rules': {'prod': 100, 'shadow': 0}, 'xgboost': {'prod': 0, 'shadow': 100}}))
+
+
   # test shadow traffic logic
-  invoke('doc_rec', 'lah', None)
+  invoke('doc_rec', None, {'Survey_responses': {1: 'I am looking for help'}})
 
   # Test GPU model alone
   create_model('doc_rec', 'gpu_featurizer', 'model3')
+  invoke('doc_rec', 'gpu_featurizer', {'Survey_responses': {1: 'I am looking for help'}})
+
+  # Add in CPU model that invokes GPU model
+  create_model('doc_rec', 'hybrid_cpu_gpu', 'model4')
+  invoke('doc_rec', 'hybrid_cpu_gpu', {'Survey_responses': {1: 'I am looking for help'}})
 
 # def create_endpoint()
 
