@@ -9,7 +9,6 @@ import time
 
 current_directory = os.path.abspath(os.path.dirname(__file__))
 parent_directory = os.path.abspath(os.path.dirname(current_directory))
-print(current_directory, parent_directory)
 sys.path.insert(0, parent_directory)
 sys.path.insert(0, current_directory)
 
@@ -29,20 +28,13 @@ class Flighty():
     pass
 
   @classmethod
-  def initialize(cls, docker_wait=25, deploy_wait=14, traffic_wait=5):
-    this_directory = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(this_directory, 'config.txt')) as f:
-      for line in f.readlines():
-        parsed = line.split(' = ')
-        if (parsed[0] == 'ORGANIZATION'):
-          cls.organization_name = parsed[1].rstrip().lower()
-
-    cls.base_url = f'https://flighty.ai/{cls.organization_name}'
+  def initialize(cls, docker_wait=25, deploy_wait=14, traffic_wait=5, name='cerebral'):
+    cls.base_url = f'https://flighty.ai/{name}'
     cls.docker_wait = docker_wait
     cls.deploy_wait = deploy_wait
     cls.traffic_wait = traffic_wait
     cls.wait_for(1)
-    return (f'Successfully initiated connection with organization {cls.organization_name}, base URL {cls.base_url}')
+    return (f'Successfully initiated connection with organization {name}, base URL {cls.base_url}')
 
   @classmethod
   def endpoint_exists(cls, name):
@@ -148,7 +140,7 @@ class Flighty():
 
     cls.endpoints[endpoint] = new_traffic
     cls.wait_for(cls.traffic_wait, f'Updating traffic to endpoint {endpoint}')
-    return f'Updated traffic for endpoint {endpoint} to be {cls.pretty_print_json(traffic)}'
+    return f'Updated traffic for endpoint {endpoint} to be {traffic}'
 
   @classmethod
   def invoke(cls, endpoint='doc_rec', model=None, data=None):
@@ -183,9 +175,9 @@ class Flighty():
             if not(cache_hit):
               output = cls.endpoints[endpoint][model_name]['pyobj'].predict(data)
             log_to_snowflake(data, True, endpoint, model_name, output, time.time()-t1)
-          if details["shadow"] > traffic_number: # replicate to shadow if necessary
-            shadow_out = cls.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
-            log_to_snowflake(data, False, endpoint, model_name, shadow_out, time.time()-t1)
+        if details["shadow"] > traffic_number: # replicate to shadow if necessary
+          shadow_out = cls.endpoints[endpoint][model_name]['pyobj'].predict(data, type="shadow")
+          log_to_snowflake(data, False, endpoint, model_name, shadow_out, time.time()-t1)
 
     if cls.cache_enabled:
       cache_key = json.dumps(data)
@@ -193,16 +185,16 @@ class Flighty():
     return output
 
   @classmethod
-  def enable_caching(cls):
+  def enable_caching(cls, endpoint, ttl):
     cls.cache_enabled = True
 
   @classmethod
   def show_endpoints(cls):
-    return cls.pretty_print_json(cls.endpoints)
-
-  @classmethod
-  def pretty_print_json(cls, input):
-    return json.dumps(input, indent=4, sort_keys=True)
+    for endpoint in cls.endpoints:
+      print(f'Endpoint: {endpoint}')
+      for model in cls.endpoints[endpoint]:
+        print(f"Model {model}, prod traffic {cls.endpoints[endpoint][model]['prod']}, "
+          f"shadow traffic {cls.endpoints[endpoint][model]['shadow']}")
 
   @classmethod
   def wait_for(cls, n, status_message='Working'):
