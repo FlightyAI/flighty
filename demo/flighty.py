@@ -82,8 +82,10 @@ class Flighty():
       model = model4
     # elif model_path == 'model4':
     #   model = model4
-
-    model = model.Model()
+    if model_path != 'model4':
+      model = model.Model()
+    else:
+      pass
     cls.wait_for(1, f'Found model at {model_path}')
     cls.wait_for(cls.docker_wait, f'Creating Docker image for model {model_name}')
     cls.wait_for(cls.deploy_wait, f'Deploying model {model_name} behind endpoint {endpoint}')
@@ -181,6 +183,7 @@ class Flighty():
   
       
     print('')
+print('about to invoke flighty')
 
 f = Flighty(docker_wait=1, deploy_wait=1, traffic_wait=1)
 
