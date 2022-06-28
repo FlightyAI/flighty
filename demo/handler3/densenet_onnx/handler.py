@@ -2,7 +2,7 @@ import random
 import time
 
 
-class Model():
+class Handler():
   def __init__(self):
       pass
 

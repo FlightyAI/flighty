@@ -1,11 +1,12 @@
 import random
 
-class Model():
+class Handler():
   def __init__(self):
-    pass
+      pass
 
-  def predict(self, data, type="prod"):
+  def predict(data, type="prod"):
     test = list(range(0,50))
     random.shuffle(test)
     output = {'physician_preference': test[:10]}
+  
     return output
