@@ -55,7 +55,7 @@ class Flighty():
 
 
   @classmethod
-  def create_handler(cls, endpoint, handler_name, handler_path='./handler1'):
+  def create_handler(cls, endpoint, handler_name, handler_path='./handler1', docker_image='701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:1'):
     if not cls.endpoint_exists(endpoint):
       return ''
 
@@ -81,7 +81,7 @@ class Flighty():
     # create cache entry to avoid key errors in invoke()
     cls.cache[handler_name] = {}
     cls.wait_for(1, f'Found handler at {handler_path}')
-    cls.wait_for(cls.docker_wait, f'Creating Docker image for handler {handler_name}')
+    cls.wait_for(cls.docker_wait, f'Using specified Docker image at {docker_image}')
     cls.wait_for(cls.deploy_wait, f'Deploying handler {handler_name} behind endpoint {endpoint}')
 
     # Serve 100% of prod traffic with this handler, if it's the first handler behind the endpoint
