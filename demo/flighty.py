@@ -23,6 +23,7 @@ from snowflake_log import log_to_snowflake
 class Flighty():
   endpoints = {}
   cache = {}
+  models = {}
   cache_enabled = False
   def __init__(self, ):
     pass
@@ -141,6 +142,32 @@ class Flighty():
     cls.endpoints[endpoint] = new_traffic
     cls.wait_for(cls.traffic_wait, f'Updating traffic to endpoint {endpoint}')
     return f'Updated traffic for endpoint {endpoint} to be {traffic}'
+
+  @classmethod
+  def upload_model(cls, model_name, folder_path=None, version=None):
+    if not exists(folder_path):
+      raise FileNotFoundError(f'Model at path {folder_path} not found. Please check the path and try again')
+
+    try:
+      model = cls.models[model_name]
+      latest_version = max(model.keys())
+      if version is None:
+        version = latest_version + 1 # no version supplied, auto-increment
+    except KeyError: # model does not exist, need to create a new one
+      if version and version > 0:
+        raise NameError(f'Model {model_name} not found. To create a new model with this name, leave version empty or pass in a value of 0')
+      else:
+        cls.models[model_name] = model = {0: None}
+        version = 0
+    
+    if version in model.keys() or version - 1 in model.keys():
+      model[version] = folder_path
+    else:
+      raise KeyError(f'You specified version {version} for model {model_name} but latest version was {latest_version}. '
+      f'Specify a version no larger than the {latest_version + 1} and try again.')
+      
+    print(f'Successfully created a model with version {version} and name {model_name} from path {folder_path}')
+    
 
   @classmethod
   def invoke(cls, endpoint='doc_rec', handler=None, data=None):
