@@ -1,7 +1,6 @@
 
 import copy
 import json
-from locale import currency
 import os
 import random
 import sys
@@ -23,7 +22,7 @@ from snowflake_log import log_to_snowflake
 class Flighty():
   endpoints = {}
   cache = {}
-  models = {}
+  artifacts = {}
   cache_enabled = False
   def __init__(self, ):
     pass
@@ -56,52 +55,53 @@ class Flighty():
 
 
   @classmethod
-  def create_handler(cls, endpoint, handler_name, handler_path='./handler1', docker_image='701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:1'):
+  def create_handler(cls, endpoint, name, folder_path='./handler1', docker_image='701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:1'):
+    # We assume there exists a file called 'handler.py' in the folder pointed at by 'folder_path'
     if not cls.endpoint_exists(endpoint):
       return ''
 
-    if not exists(handler_path):
-      print(f'Handler at path {handler_path} not found. Please check the path and try again.')
+    if not exists(folder_path):
+      print(f'Handler at path {folder_path} not found. Please check the path and try again.')
       return ''
 
-    if handler_name in cls.endpoints[endpoint].keys():
-      print(f'Handler with name {handler_name} already exists behind endpoint {endpoint}. '
+    if name in cls.endpoints[endpoint].keys():
+      print(f'Handler with name {name} already exists behind endpoint {endpoint}. '
         'Please select a different name or delete the existing handler before continuing.')
       return ''
 
-    if handler_path == 'handler1':
+    if folder_path == './handler1':
       handler = handler1
-    elif handler_path == 'handler2':
+    elif folder_path == './handler2':
       handler = handler2
-    elif handler_path == 'handler3':
+    elif folder_path == './handler3':
       handler = handler3
-    elif handler_path == 'handler4':
+    elif folder_path == './handler4':
       handler = handler4
     handler = handler.Handler()
 
     # create cache entry to avoid key errors in invoke()
-    cls.cache[handler_name] = {}
-    cls.wait_for(1, f'Found handler at {handler_path}')
+    cls.cache[name] = {}
+    cls.wait_for(1, f'Found handler at {folder_path}')
     cls.wait_for(cls.docker_wait, f'Using specified Docker image at {docker_image}')
-    cls.wait_for(cls.deploy_wait, f'Deploying handler {handler_name} behind endpoint {endpoint}')
+    cls.wait_for(cls.deploy_wait, f'Deploying handler {name} behind endpoint {endpoint}')
 
     # Serve 100% of prod traffic with this handler, if it's the first handler behind the endpoint
     if len(cls.endpoints[endpoint]) == 0:
-      cls.wait_for(cls.traffic_wait, f'Updating endpoint to serve 100% of traffic with handler {handler_name}')
-      cls.endpoints[endpoint][handler_name] = {'pyobj': handler, 'prod': 100, 'shadow': 0}
+      cls.wait_for(cls.traffic_wait, f'Updating endpoint to serve 100% of traffic with handler {name}')
+      cls.endpoints[endpoint][name] = {'pyobj': handler, 'prod': 100, 'shadow': 0}
     else:
-      cls.endpoints[endpoint][handler_name] = {'pyobj': handler, 'prod': 0, 'shadow': 0}
-    return (f'Successfully deployed handler {handler_name}. To invoke this handler directly, '
-      f'call {cls.base_url}/{endpoint}/{handler_name}')
+      cls.endpoints[endpoint][name] = {'pyobj': handler, 'prod': 0, 'shadow': 0}
+    return (f'Successfully deployed handler {name}. To invoke this handler directly, '
+      f'call {cls.base_url}/{endpoint}/{name}')
 
   @classmethod
   def update_endpoint(cls, endpoint, traffic):
     if not cls.endpoint_exists(endpoint):
       return ''
     
-    for handler_name in traffic.keys():
-      if handler_name not in cls.endpoints[endpoint].keys():
-        print(f'You tried to adjust traffic for handler name {handler_name}, which does not exist'
+    for name in traffic.keys():
+      if name not in cls.endpoints[endpoint].keys():
+        print(f'You tried to adjust traffic for handler name {name}, which does not exist'
           f'behind endpoint {endpoint}. Please create the handler first with create_handler')
 
  
@@ -144,29 +144,38 @@ class Flighty():
     return f'Updated traffic for endpoint {endpoint} to be {traffic}'
 
   @classmethod
-  def upload_model(cls, model_name, folder_path=None, version=None):
+  def get_artifact_path(cls, name, version=None):
+    artifact = cls.artifacts[name]
+    if version is None: # assume latest
+      version = max(artifact.keys())
+    return artifact[version]
+
+  @classmethod
+  def upload_artifact(cls, name, folder_path=None, version=None):
     if not exists(folder_path):
-      raise FileNotFoundError(f'Model at path {folder_path} not found. Please check the path and try again')
+      raise FileNotFoundError(f'Artifact at path {folder_path} not found. Please check the path and try again')
+    
+    folder_path = os.path.abspath(folder_path)
 
     try:
-      model = cls.models[model_name]
-      latest_version = max(model.keys())
+      artifact = cls.artifacts[name]
+      latest_version = max(artifact.keys())
       if version is None:
         version = latest_version + 1 # no version supplied, auto-increment
-    except KeyError: # model does not exist, need to create a new one
+    except KeyError: # artifact does not exist, need to create a new one
       if version and version > 0:
-        raise NameError(f'Model {model_name} not found. To create a new model with this name, leave version empty or pass in a value of 0')
+        raise NameError(f'Artifact {name} not found. To create a new artifact with this name, leave version empty or pass in a value of 0')
       else:
-        cls.models[model_name] = model = {0: None}
+        cls.artifacts[name] = artifact = {0: None}
         version = 0
     
-    if version in model.keys() or version - 1 in model.keys():
-      model[version] = folder_path
+    if version in artifact.keys() or version - 1 in artifact.keys():
+      artifact[version] = folder_path
     else:
-      raise KeyError(f'You specified version {version} for model {model_name} but latest version was {latest_version}. '
+      raise KeyError(f'You specified version {version} for artifact {name} but latest version was {latest_version}. '
       f'Specify a version no larger than the {latest_version + 1} and try again.')
       
-    print(f'Successfully created a model with version {version} and name {model_name} from path {folder_path}')
+    print(f'Successfully created artifact with version {version} and name {name} from path {folder_path}')
     
 
   @classmethod
@@ -188,23 +197,23 @@ class Flighty():
       cls.wait_for(1, f'Invoking endpoint {endpoint}')
       traffic_number = random.randint(0, 99)
       current_sum = 0
-      for handler_name, details in cls.endpoints[endpoint].items():
+      for name, details in cls.endpoints[endpoint].items():
         if details["prod"] > 0:
           current_sum += details["prod"]
           if current_sum > traffic_number: # do our prod traffic split
             
             if cls.cache_enabled:
               try:
-                output = cls.cache[handler_name][json.dumps(data)]
+                output = cls.cache[name][json.dumps(data)]
                 cache_hit = True
               except KeyError:
                 pass
             if not(cache_hit):
-              output = cls.endpoints[endpoint][handler_name]['pyobj'].predict(data)
-            log_to_snowflake(data, True, endpoint, handler_name, output, time.time()-t1)
+              output = cls.endpoints[endpoint][name]['pyobj'].predict(data)
+            log_to_snowflake(data, True, endpoint, name, output, time.time()-t1)
         if details["shadow"] > traffic_number: # replicate to shadow if necessary
-          shadow_out = cls.endpoints[endpoint][handler_name]['pyobj'].predict(data, type="shadow")
-          log_to_snowflake(data, False, endpoint, handler_name, shadow_out, time.time()-t1)
+          shadow_out = cls.endpoints[endpoint][name]['pyobj'].predict(data, type="shadow")
+          log_to_snowflake(data, False, endpoint, name, shadow_out, time.time()-t1)
 
     if cls.cache_enabled:
       cache_key = json.dumps(data)
