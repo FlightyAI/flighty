@@ -55,7 +55,8 @@ class Flighty():
 
 
   @classmethod
-  def create_handler(cls, endpoint, name, folder_path='./handler1', docker_image='701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:1'):
+  def create_handler(cls, endpoint, name, folder_path='./handler1', 
+    docker_image='701906161514.dkr.ecr.us-west-1.amazonaws.com/flighty-repository:1', artifacts=[]):
     # We assume there exists a file called 'handler.py' in the folder pointed at by 'folder_path'
     if not cls.endpoint_exists(endpoint):
       return ''

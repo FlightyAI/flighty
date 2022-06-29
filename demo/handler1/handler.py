@@ -8,10 +8,7 @@ sys.path.insert(0, parent_directory)
 
 class Handler():
   def __init__(self):
-    from flighty import Flighty
-    name = 'rules'
-    artifact_path = Flighty.get_artifact_path(name=name)
-    print(f'Got artifact {name} from path {artifact_path}')
+    pass
 
   def predict(data, type="prod"):
     test = list(range(0,50))
