@@ -1,10 +1,4 @@
-import os
-import pathlib
 import random
-import sys
-
-parent_directory = os.path.abspath(pathlib.Path('./..'))
-sys.path.insert(0, parent_directory)
 
 class Handler():
   def __init__(self):
