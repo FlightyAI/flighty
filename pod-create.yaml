@@ -7,10 +7,10 @@ metadata:
   name: test
 spec:
   containers:
-    - image: test
+    - image: docker.io/gvashishtha/flighty:test
       name: test
-      resources: {}
-      imagePullPolicy: Never
+  imagePullSecrets:
+    - name: regcred
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 status: {}
