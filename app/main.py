@@ -20,7 +20,8 @@ config.load_incluster_config()
 
 v1 = client.CoreV1Api()
 
-@app.post("/create")
+
+@app.post("/create_handler")
 def create_pod():
   containers = [client.V1Container(name='test', image='docker.io/gvashishtha/flighty:test')]
   spec = client.V1PodSpec(
