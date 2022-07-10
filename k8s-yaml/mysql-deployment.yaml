@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-mysql
+spec:
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /usr/local/var/mysql-k8s1
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+  volumeName: pv-mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None
+---
+# We want to make the mysql service accessible from outside the cluster
+# so that we can test it with the Python client
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-external
+spec:
+  type: NodePort
+  selector:
+    app: mysql
+  ports:
+    # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+    - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - image: mysql:8.0.29
+          name: mysql
+          env:
+            # Use secret in real usage
+            - name: MYSQL_ROOT_PASSWORD
+              value: password
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            # - name: mysql-initdb
+            #   mountPath: /docker-entrypoint-initdb.d
+          # imagePullPolicy: Always
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+        # - name: mysql-initdb
+        #   configMap:
+        #     name: mysql-initdb-config
+#---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: mysql-initdb-config
+# data:
+#   # CREATE TABLE handlers (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(256) NOT NULL,
+#   #   FOREIGN KEY (endpoint_id) REFERENCES endpoints(id), folder_path VARCHAR(256) NOT NULL,
+#   #   artifact_ids VARCHAR(256) NOT NULL,
+#   #   PRIMARY KEY(id),
+#   #   UNIQUE KEY endpoint_handler (endpoint_id, name));
+#   # CREATE TABLE artifacts (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(256) NOT NULL UNIQUE,
+#   #   artifact_path VARCHAR(256) NOT NULL, version INT NOT NULL,
+#   #   PRIMARY KEY(id));
+#   # CREATE TABLE artifact_handler (`handler_id` INT NOT NULL, `artifact_id` INT NOT NULL,
+#   #   PRIMARY KEY(`handler_id`, `artifact_id`));
+#   initdb.sql: |
+#     CREATE TABLE endpoints (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL UNIQUE, `models` JSON,
+#      PRIMARY KEY(`id`));
