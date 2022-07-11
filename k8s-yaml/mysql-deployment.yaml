@@ -8,7 +8,7 @@ spec:
   accessModes:
     - ReadWriteMany
   storageClassName: manual
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Recycle
   hostPath:
     path: /usr/local/var/mysql8
     type: DirectoryOrCreate
@@ -104,8 +104,10 @@ data:
       );
     CREATE TABLE handlers
       (
-        `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
+        `id` INT NOT NULL AUTO_INCREMENT, 
+        `name` VARCHAR(256) NOT NULL,
         `folder_path` VARCHAR(256) NOT NULL,
+        `docker_image` VARCHAR(256) NOT NULL,
         `prod_traffic` INT NOT NULL DEFAULT 0,
         `shadow_traffic` INT NOT NULL DEFAULT 0,
         `endpoint_id` INT,

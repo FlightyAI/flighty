@@ -24,6 +24,8 @@ Then expose on localhost:
 
 If you see `2022-07-10T21:26:22.165920Z 1 [ERROR] [MY-013090] [InnoDB] Unsupported redo log format (0). The redo log was created before MySQL 5.7.9 2022-07-10T21:26:22.165980Z 1 [ERROR] [MY-012930] [InnoDB] Plugin initialization aborted with er` when doing `kubectl logs then try changing the name of the hostpath. I think specifying `Reclaim` in the volume mount is causing a badly formatted log file from the previous pod to stick around.
 
+If you see Internal Server Errors when trying to do /list etc, try restarting the pod. I added a livenessProbe to the deployment so hopefully that also helps (k8s will automatically kills the pod if livenessProbe fails)
+
 ## Get Python terminal to make DB requests
 
 ```

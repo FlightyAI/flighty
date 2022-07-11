@@ -45,5 +45,12 @@ spec:
           ports:
             - containerPort: 80
               name: endpoint
+          livenessProbe:
+            httpGet:
+              path: /list
+              port: 80
+            failureThreshold: 2
+            periodSeconds: 10
+            initialDelaySeconds: 5
       imagePullSecrets:
         - name: regcred
