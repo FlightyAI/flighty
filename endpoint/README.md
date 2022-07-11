@@ -16,8 +16,57 @@ python3
 
 ```{python}
 import json
-db = MySQLdb.connect(host="mysql.default.svc.cluster.local", port=3306, password="password")
+import mysql.connector
+db = mysql.connector.connect(host="127.0.0.1", port=3306, password="password", db="flighty")
 c=db.cursor()
+c.execute("DROP TABLE endpoints")
+c.execute("""CREATE TABLE endpoints (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL UNIQUE,
+     PRIMARY KEY(`id`));""")
+c.execute("INSERT INTO endpoints (name) VALUES (%s)",
+  ("doc_rec",)
+)
+c.execute("SELECT * FROM endpoints")
+c.fetchall()
+c.execute("""CREATE TABLE handlers
+  (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
+    `folder_path` VARCHAR(256) NOT NULL,
+    `prod_traffic` INT NOT NULL DEFAULT 0,
+    `shadow_traffic` INT NOT NULL DEFAULT 0,
+    `endpoint_id` INT,
+    PRIMARY KEY(`id`),
+    UNIQUE KEY `endpoint_handler` (`endpoint_id`, `name`),
+    FOREIGN KEY (`endpoint_id`) REFERENCES endpoints(`id`)
+  );"""
+)
+c.execute("""DROP TABLE handlers""")
+try:
+  c.execute("""INSERT INTO handlers  (name, endpoint_id, folder_path) VALUES (%s, %s, %s)""", ("rules", "1", "./rules"))
+except MySQLdb.IntegrityError as (num, value):
+  print(f"no foreign key exists {num}")
+c.execute("""SELECT name, endpoint_id, shadow_traffic, prod_traffic, folder_path FROM handlers""")
+c.fetchall()
+c.execute("""DROP TABLE artifacts""")
+c.execute("""CREATE TABLE artifacts (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
+  `artifact_path` VARCHAR(256) NOT NULL, `version` INT NOT NULL,
+  PRIMARY KEY(`id`),
+  UNIQUE KEY `artifact_version` (`name`, `version`))"""
+);
+
+c.execute("INSERT INTO artifacts (name, artifact_path, version) VALUES (%s, %s, %s)",
+  ("xgboost", "./xgboost", 2))
+c.execute("SELECT * FROM artifacts")
+c.fetchall()
+
+
+c.execute("""DROP TABLE artifact_handler""")
+c.execute("""CREATE TABLE artifact_handler (`handler_id` INT NOT NULL, `artifact_id` INT NOT NULL,
+  PRIMARY KEY(`handler_id`, `artifact_id`),
+  FOREIGN KEY (`handler_id`) REFERENCES handlers(`id`),
+  FOREIGN KEY (`artifact_id`) REFERENCES artifacts(`id`)
+)""");
+c.execute("""INSERT INTO artifact_handler (handler_id, artifact_id) VALUES (%s, %s)""", ('5', '1') )
+c.execute("""SELECT * FROM artifacts INNER JOIN artifact_handler ON id = artifact_handler.artifact_id""")
+
 c.execute("""CREATE DATABASE flighty""")
 c.execute("""USE flighty""")
 c.execute("""CREATE TABLE endpoints (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL UNIQUE, `models` JSON,

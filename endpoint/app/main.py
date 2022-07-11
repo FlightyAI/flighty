@@ -1,18 +1,12 @@
 from fastapi import FastAPI
 from kubernetes import client, config
 from typing import Union
-import MySQLdb
+import mysql.connector
+
 
 app = FastAPI()
-db = MySQLdb.connect(
-    # TODO - avoid hardcoding namespace, will want to be configurable
-    # TODO - use secret password
-    # host="mysql.default.svc.cluster.local", 
-    host="192.168.65.4",
-    port=3306, 
-    password="password",
-    db="test")
-c=db.cursor()
+cnx = mysql.connector.connect(host="127.0.0.1", password="password", database="flighty")
+c=cnx.cursor()
 
 
 @app.get("/show_endpoints")

@@ -19,13 +19,16 @@ kubectl apply -f pod-role.yaml
 kubectl apply -f pod-rolebinding.yaml
 ```
 
-## Expose pod on localhost
+## Deploy database
 
-Directions are [from here](https://minikube.sigs.k8s.io/docs/handbook/accessing/#example-of-nodeport):
+`kubectl apply -f k8s-mysql/mysql-deployment.yaml`
+
+### Expose pod on localhost
+
+Directions are [from here](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/):
 
 ```
-kubectl expose pod test --type=NodePort --port=80
-minikube service test --url
+kubectl port-forward service/mysql-external 3306:3306
 ```
 
 Access at this location: `http://127.0.0.1:TUNNEL_PORT`

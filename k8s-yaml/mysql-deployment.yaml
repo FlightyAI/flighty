@@ -8,9 +8,9 @@ spec:
   accessModes:
     - ReadWriteMany
   storageClassName: manual
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Recycle
   hostPath:
-    path: /usr/local/var/mysql-k8s1
+    path: /usr/local/var/mysql8
     type: DirectoryOrCreate
 ---
 apiVersion: v1
@@ -79,32 +79,52 @@ spec:
           volumeMounts:
             - name: mysql-persistent-storage
               mountPath: /var/lib/mysql
-            # - name: mysql-initdb
-            #   mountPath: /docker-entrypoint-initdb.d
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
           # imagePullPolicy: Always
       volumes:
         - name: mysql-persistent-storage
           persistentVolumeClaim:
             claimName: mysql-pv-claim
-        # - name: mysql-initdb
-        #   configMap:
-        #     name: mysql-initdb-config
-#---
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: mysql-initdb-config
-# data:
-#   # CREATE TABLE handlers (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(256) NOT NULL,
-#   #   FOREIGN KEY (endpoint_id) REFERENCES endpoints(id), folder_path VARCHAR(256) NOT NULL,
-#   #   artifact_ids VARCHAR(256) NOT NULL,
-#   #   PRIMARY KEY(id),
-#   #   UNIQUE KEY endpoint_handler (endpoint_id, name));
-#   # CREATE TABLE artifacts (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(256) NOT NULL UNIQUE,
-#   #   artifact_path VARCHAR(256) NOT NULL, version INT NOT NULL,
-#   #   PRIMARY KEY(id));
-#   # CREATE TABLE artifact_handler (`handler_id` INT NOT NULL, `artifact_id` INT NOT NULL,
-#   #   PRIMARY KEY(`handler_id`, `artifact_id`));
-#   initdb.sql: |
-#     CREATE TABLE endpoints (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL UNIQUE, `models` JSON,
-#      PRIMARY KEY(`id`));
+        - name: mysql-initdb
+          configMap:
+            name: mysql-initdb-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-initdb-config
+data:
+  initdb.sql: |
+    CREATE DATABASE flighty;
+    USE flighty;
+    CREATE TABLE endpoints 
+      (
+        `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL UNIQUE,
+        PRIMARY KEY(`id`)
+      );
+    CREATE TABLE handlers
+      (
+        `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
+        `folder_path` VARCHAR(256) NOT NULL,
+        `prod_traffic` INT NOT NULL DEFAULT 0,
+        `shadow_traffic` INT NOT NULL DEFAULT 0,
+        `endpoint_id` INT,
+        PRIMARY KEY(`id`),
+        UNIQUE KEY `endpoint_handler` (`endpoint_id`, `name`),
+        FOREIGN KEY (`endpoint_id`) REFERENCES endpoints(`id`)
+      );
+    CREATE TABLE artifacts 
+      (
+        `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
+        `artifact_path` VARCHAR(256) NOT NULL, `version` INT NOT NULL,
+        PRIMARY KEY(`id`),
+        UNIQUE KEY `artifact_version` (`name`, `version`)
+      );
+    CREATE TABLE artifact_handler 
+      (
+        `handler_id` INT NOT NULL, `artifact_id` INT NOT NULL,
+        PRIMARY KEY(`handler_id`, `artifact_id`),
+        FOREIGN KEY (`handler_id`) REFERENCES handlers(`id`),
+        FOREIGN KEY (`artifact_id`) REFERENCES artifacts(`id`)
+      );
