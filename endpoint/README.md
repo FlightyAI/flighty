@@ -1,8 +1,26 @@
-# Build image
+## Build image
 
-`docker build . -t gvashishtha/flighty:endpoints`
+`docker build . -t gvashishtha/flighty:endpoint`
 
-## NOTE
+Push to docker hub
+
+`docker push gvashishtha/flighty:endpoint`
+
+## Deploy image
+
+First deploy registry credential secret:
+
+`kubectl create -f k8s-yaml/secret-regcred.yaml`
+
+Then deploy endpoint service
+
+`kubectl create -f k8s-yaml/endpoint-deployment.yaml`
+
+Then expose on localhost:
+
+`kubectl port-forward service/endpoint-external 8088:80`
+
+## Troubleshooting
 
 If you see `2022-07-10T21:26:22.165920Z 1 [ERROR] [MY-013090] [InnoDB] Unsupported redo log format (0). The redo log was created before MySQL 5.7.9 2022-07-10T21:26:22.165980Z 1 [ERROR] [MY-012930] [InnoDB] Plugin initialization aborted with er` when doing `kubectl logs then try changing the name of the hostpath. I think specifying `Reclaim` in the volume mount is causing a badly formatted log file from the previous pod to stick around.
 
@@ -40,7 +58,7 @@ c.execute("""CREATE TABLE handlers
 )
 c.execute("""DROP TABLE handlers""")
 try:
-  c.execute("""INSERT INTO handlers  (name, endpoint_id, folder_path) VALUES (%s, %s, %s)""", ("rules", "1", "./rules"))
+  c.execute("""INSERT INTO handlers  (name, endpoint_id, folder_path, shadow_traffic) VALUES (%s, %s, %s, %s)""", ("rules", "1", "./rules", "5"))
 except MySQLdb.IntegrityError as (num, value):
   print(f"no foreign key exists {num}")
 c.execute("""SELECT name, endpoint_id, shadow_traffic, prod_traffic, folder_path FROM handlers""")

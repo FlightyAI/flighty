@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Union
 import mysql.connector
 
 class Endpoint(BaseModel):
@@ -12,10 +11,13 @@ app = FastAPI()
 try:   
     cnx = mysql.connector.connect(host="mysql.default.svc.cluster.local", password="password", database="flighty")
 except mysql.connector.errors.DatabaseError:
-    # Attempt to connect to localhost if we are doing local development
-    cnx = mysql.connector.connect(host="127.0.0.1", password="password", database="flighty")
+    try:
+        # Attempt to connect to localhost if we are doing local development
+        cnx = mysql.connector.connect(host="127.0.0.1", password="password", database="flighty")
+    except mysql.connector.errors.DatabaseError:
+        # if we're running in Docker
+        cnx = mysql.connector.connect(host="host.docker.internal", password="password", database="flighty")
 c=cnx.cursor()
-
 
 @app.get("/list")
 def show_endpoints():
