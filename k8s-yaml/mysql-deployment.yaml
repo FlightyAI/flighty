@@ -10,7 +10,7 @@ spec:
   storageClassName: manual
   persistentVolumeReclaimPolicy: Recycle
   hostPath:
-    path: /usr/local/var/mysql8
+    path: /usr/local/var/flighty/mysql
     type: DirectoryOrCreate
 ---
 apiVersion: v1
@@ -119,6 +119,7 @@ data:
       (
         `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
         `artifact_path` VARCHAR(256) NOT NULL, `version` INT NOT NULL,
+        `type` VARCHAR(256),
         PRIMARY KEY(`id`),
         UNIQUE KEY `artifact_version` (`name`, `version`)
       );
