@@ -1,14 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-#from kubernetes import client, config
 from typing import Union
 import mysql.connector
 
 class Endpoint(BaseModel):
     name: str
+    prod_traffic: int = 0
+    shadow_traffic: int = 0
 
 app = FastAPI()
-cnx = mysql.connector.connect(host="127.0.0.1", password="password", database="flighty")
+try:   
+    cnx = mysql.connector.connect(host="mysql.default.svc.cluster.local", password="password", database="flighty")
+except mysql.connector.errors.DatabaseError:
+    # Attempt to connect to localhost if we are doing local development
+    cnx = mysql.connector.connect(host="127.0.0.1", password="password", database="flighty")
 c=cnx.cursor()
 
 
@@ -16,7 +21,6 @@ c=cnx.cursor()
 def show_endpoints():
     c.execute("""SELECT * FROM endpoints""")
     return (c.fetchall())
-
 
 @app.post("/create")
 async def create_endpoint(endpoint: Endpoint):
@@ -30,26 +34,12 @@ async def create_endpoint(endpoint: Endpoint):
 @app.post("/delete")
 async def delete_endpoint(endpoint: Endpoint):
     #try:
-    c.execute("DELETE FROM `endpoints` WHERE name == %s", (endpoint.name, ))
+    c.execute("DELETE FROM `endpoints` WHERE name = %s", (endpoint.name, ))
     cnx.commit()
-    return "Endpoint successfully deleted"
+    return f"Endpoint {endpoint.name} successfully deleted"
     # except mysql.connector.errors.IntegrityError:
     #     return f"Endpoint with name {endpoint.name} already exists"
     
-
-
-# Configs can be set in Configuration class directly or using helper utility
-# config.load_incluster_config()
-
-# v1 = client.CoreV1Api()
-
-
-# @app.post("/create_handler")
-# def create_pod():
-#   containers = [client.V1Container(name='test', image='docker.io/gvashishtha/flighty:test')]
-#   spec = client.V1PodSpec(
-#       containers=containers, 
-#       image_pull_secrets=[client.V1LocalObjectReference(name='regcred')])
-#   metadata=client.V1ObjectMeta(name='test1', labels={"pod_type": "mlservice"})
-#   pod = client.V1Pod(metadata=metadata, spec=spec)
-#   v1.create_namespaced_pod(namespace='default', body=pod)
+@app.post("/update")
+async def update_endpoint(endpoint: Endpoint):
+    pass
