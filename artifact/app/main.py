@@ -1,6 +1,6 @@
 from enum import Enum
-from fastapi import FastAPI, HTTPException, UploadFile
-from pydantic import BaseModel
+from fastapi import FastAPI, Form, HTTPException, UploadFile
+from pydantic import BaseModel, PositiveInt
 
 import mysql.connector
 import os
@@ -29,7 +29,7 @@ class ArtifactTypeEnum(str, Enum):
 
 class Artifact(BaseModel):
     name: str
-    version: int = 0
+    version: PositiveInt = 1
     path: str
     type: ArtifactTypeEnum
 
@@ -37,20 +37,16 @@ class Artifact(BaseModel):
 # Then store the full path inside of the database
 # We'll then mount that volume to containers we spin up
 @app.post("/create")
-async def create_artifact(file: UploadFile, name: str, version: int, type: ArtifactTypeEnum):
+async def create_artifact(
+        file: UploadFile = Form(...), 
+        name: str = Form(...), 
+        version: PositiveInt = Form(...), 
+        type: ArtifactTypeEnum = Form(...)):
     db_path = os.path.join('flighty-files', name, str(version))
-    dir_path = os.path.join(os.getcwd(), db_path)
+    dir_path = os.path.join(os.path.dirname(os.path.abspath('__file__')), db_path)
     os.makedirs(dir_path, exist_ok=True)
 
     path = os.path.join(dir_path, file.filename)
-    with open(path, 'wb') as f:
-        f.write(file.file.read())
-    
-    try:
-        shutil.unpack_archive(path, dir_path) # unpack zip file if it is a zip
-        os.remove(path)
-    except shutil.ReadError as e: # not a zip file
-        pass
 
     # TODO - There is a dependency between where artifact is writing files and where handler expects to read them
     # Need to figure out a way to factor that dependency into one common place
@@ -69,6 +65,17 @@ async def create_artifact(file: UploadFile, name: str, version: int, type: Artif
         last_version = c.fetchone()['max']
         raise HTTPException(status_code=422, detail=f"""Artifact {name} with version {version} already exists. 
             Specify a version larger than {last_version} and try again.""")
+
+    with open(path, 'wb') as f:
+        f.write(file.file.read())
+        print(f'wrote file out to path {path}')
+    
+    try:
+        shutil.unpack_archive(path, dir_path) # unpack zip file if it is a zip
+        os.remove(path)
+    except shutil.ReadError as e: # not a zip file
+        pass
+
     return artifact
 
 
@@ -83,3 +90,8 @@ async def list_artifacts(name: str = None):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# curl -X POST "http://localhost:80/create" -H "accept: application/json" \
+#  -H "Content-Type: multipart/form-data" -F "file=@requirements.txt" \
+#  -F "name=test" -F "type=code" -F "version=3"
