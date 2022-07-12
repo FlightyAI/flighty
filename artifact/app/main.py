@@ -1,3 +1,4 @@
+from contextlib import closing
 from enum import Enum
 from fastapi import FastAPI, Form, HTTPException, UploadFile
 from pydantic import BaseModel, PositiveInt
@@ -9,17 +10,32 @@ import uvicorn
 
 
 # TODO - factor this out into shared library across all services
-try:   
-    cnx = mysql.connector.connect(host="mysql.default.svc.cluster.local", password="password", database="flighty")
-except mysql.connector.errors.DatabaseError:
-    try:
-        # Attempt to connect to localhost if we are doing local development
-        cnx = mysql.connector.connect(host="127.0.0.1", password="password", database="flighty")
-    except mysql.connector.errors.DatabaseError:
-        # if we're running in Docker
-        cnx = mysql.connector.connect(host="host.docker.internal", password="password", database="flighty")
+db_conn_info = {
+    "user": "root",
+    "password": "password",
+    "host": "mysql.default.svc.cluster.local",
+    "database": "flighty"
+}
 
-c=cnx.cursor(dictionary=True)
+
+def discover_host():
+    try:   
+        cnx = mysql.connector.connect(**db_conn_info)
+    except mysql.connector.errors.DatabaseError:
+        try:
+            # Attempt to connect to localhost if we are doing local development
+            db_conn_info['host'] = '127.0.0.1'
+            cnx = mysql.connector.connect(**db_conn_info)
+            
+        except mysql.connector.errors.DatabaseError:
+            # if we're running in Docker
+            db_conn_info['host'] = 'host.docker.internal'
+            cnx = mysql.connector.connect(**db_conn_info)
+    finally:
+        cnx.close()
+
+
+discover_host()
 
 app = FastAPI()
 
@@ -42,29 +58,34 @@ async def create_artifact(
         name: str = Form(...), 
         version: PositiveInt = Form(...), 
         type: ArtifactTypeEnum = Form(...)):
+    ()
     db_path = os.path.join('flighty-files', name, str(version))
     dir_path = os.path.join(os.path.dirname(os.path.abspath('__file__')), db_path)
     os.makedirs(dir_path, exist_ok=True)
 
     path = os.path.join(dir_path, file.filename)
 
-    # TODO - There is a dependency between where artifact is writing files and where handler expects to read them
+    # TODO - There is a dependency between where artifact is writing files and where 
+    # handler expects to read them
     # Need to figure out a way to factor that dependency into one common place
     artifact = Artifact(name=name, version=version, path='/' + db_path, type=type)
-
-    try:
-        c.execute(
-                """INSERT INTO artifacts
-                (name, path, version, type) VALUES (%s, %s, %s, %s)
-                """, (artifact.name, artifact.path, artifact.version, 
-                    artifact.type)
-        )
-        cnx.commit()
-    except mysql.connector.errors.IntegrityError:
-        c.execute("SELECT MAX(version) AS max FROM artifacts WHERE name = %s", (artifact.name,))
-        last_version = c.fetchone()['max']
-        raise HTTPException(status_code=422, detail=f"""Artifact {name} with version {version} already exists. 
-            Specify a version larger than {last_version} and try again.""")
+    print(f'artifact is {artifact}')
+    with closing(mysql.connector.connect(**db_conn_info)) as cnx:
+        with closing(cnx.cursor(dictionary=True)) as c:
+            try:
+                c.execute(
+                        """INSERT INTO artifacts
+                        (name, path, version, type) VALUES (%s, %s, %s, %s)
+                        """, (artifact.name, artifact.path, artifact.version, 
+                            artifact.type)
+                )
+                cnx.commit()
+            except mysql.connector.errors.IntegrityError:
+                c.execute("SELECT MAX(version) AS max FROM artifacts WHERE name = %s", (artifact.name,))
+                last_version = c.fetchone()['max']
+                raise HTTPException(status_code=422, detail=f"""Artifact {name} with version 
+                    {version} already exists. 
+                    Specify a version larger than {last_version} and try again.""")
 
     with open(path, 'wb') as f:
         f.write(file.file.read())
@@ -81,17 +102,15 @@ async def create_artifact(
 
 @app.get("/list")
 async def list_artifacts(name: str = None):
-    if name:
-        c.execute("SELECT * FROM artifacts WHERE name = %s", (name,))
-        return c.fetchall()
-    else:
-        c.execute("SELECT * FROM artifacts")
-        return c.fetchall()
+    with closing(mysql.connector.connect(**db_conn_info)) as cnx:
+        with closing(cnx.cursor(dictionary=True)) as c:
+            if name:
+                c.execute("SELECT * FROM artifacts WHERE name = %s", (name,))
+                return c.fetchall()
+            else:
+                c.execute("SELECT * FROM artifacts")
+                return c.fetchall()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-# curl -X POST "http://localhost:80/create" -H "accept: application/json" \
-#  -H "Content-Type: multipart/form-data" -F "file=@requirements.txt" \
-#  -F "name=test" -F "type=code" -F "version=3"
+docker run -p 80:80 -v /Users/gkv/Startup/flighty/artifact/flighty-files:/code/flighty-files gvashishtha/flighty:artifact
