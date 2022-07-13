@@ -11,6 +11,7 @@ COPY ./requirements.txt /code/requirements.txt
 COPY *.py /code/
 
 COPY routers /code/routers
+
 # 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
