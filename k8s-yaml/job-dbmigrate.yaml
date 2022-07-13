@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-upgrade
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        job: db-upgrade
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: alembic
+          image: docker.io/gvashishtha/flighty:alembic
+          #args: ["downgrade", "-1"]
+          args: ["upgrade", "864bdc030ff3"]
+      imagePullSecrets:
+        - name: regcred

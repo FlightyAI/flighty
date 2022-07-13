@@ -6,11 +6,18 @@ metadata:
   name: test
 spec:
   containers:
-    - image: docker.io/gvashishtha/flighty:test
+    - image: docker.io/gvashishtha/flighty:model_server
       name: test
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+            - name: model-store
+              mountPath: /code/flighty-files
+              subPath: first-artifact/2
   imagePullSecrets:
     - name: regcred
-  dnsPolicy: ClusterFirst
   restartPolicy: Always
+  volumes:
+    - name: model-store
+      persistentVolumeClaim:
+        claimName: model-store-pvc
 status: {}

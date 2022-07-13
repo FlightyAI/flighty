@@ -16,4 +16,4 @@ COPY alembic.ini /code/
 
 COPY alembic /code/alembic
 
-ENTRYPOINT ["alembic", "upgrade"]
+ENTRYPOINT ["alembic"]
