@@ -13,3 +13,10 @@ It has to do two things:
 docker build . -t gvashishtha/flighty:model_server
 docker push gvashishtha/flighty:model_server
 ```
+
+## Running to test
+
+```
+docker run -p 80:80 -v /Users/gkv/Startup/flighty/model_server/customer_code_sample:/code/customer_code \
+  gvashishtha/flighty:model_server
+```
