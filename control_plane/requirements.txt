@@ -1,6 +1,5 @@
 anyio==3.6.1
 click==8.1.3
--e git+ssh://git@github.com/FlightyAI/flighty.git@7a3aebe16a28567e4acff36d06db090bfcb37011#egg=control_plane&subdirectory=control_plane
 fastapi==0.78.0
 greenlet==1.1.2
 h11==0.13.0

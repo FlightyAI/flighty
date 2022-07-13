@@ -2,14 +2,17 @@ import models
 import schemas
 from database import SessionLocal
 
-from fastapi import Depends, APIRouter, Form, HTTPException, UploadFile
+from fastapi import Depends, APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import PositiveInt
 from sqlalchemy.orm import Session
 
+import logging
 import os
 import shutil
 import uvicorn
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('artifact')
 
 app =  APIRouter(prefix="/artifacts")
 
@@ -23,7 +26,7 @@ def get_db():
 
 @app.post("/create", response_model=schemas.Artifact)
 def create_artifact(
-        file: UploadFile = Form(...), 
+        file: UploadFile = File(...), 
         name: str = Form(...), 
         version: PositiveInt = Form(...), 
         type: models.ArtifactTypeEnum = Form(...), 
@@ -48,11 +51,12 @@ def create_artifact(
     os.makedirs(dir_path, exist_ok=True)
     with open(path, 'wb') as f:
         f.write(file.file.read())
-        print(f'wrote file out to path {path}')
+        logger.info(f'wrote file out to path {path}')
     
     # unpack zip file if it is a zip
     try:
         shutil.unpack_archive(path, dir_path) 
+        logger.info('archive deteced, unpacking...')
         os.remove(path)
     except shutil.ReadError as e: # not a zip file
         pass
@@ -67,4 +71,3 @@ async def list_artifacts(name: str = None, db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-# docker run -p 80:80 -v /Users/gkv/Startup/flighty/artifact/flighty-files:/code/flighty-files gvashishtha/flighty:artifact
