@@ -1,7 +1,11 @@
 from contextlib import closing
 from enum import Enum
-from fastapi import FastAPI, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile
 from pydantic import BaseModel, PositiveInt
+from sqlalchemy.orm import Session
+
+from control_plane.database import SessionLocal
+from . import models, schemas
 
 import mysql.connector
 import os
@@ -48,6 +52,27 @@ class Artifact(BaseModel):
     version: PositiveInt = 1
     path: str
     type: ArtifactTypeEnum
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.post("/artifact/create", response_model=schemas.Artifact)
+def create_art(artifact: schemas.ArtifactCreate, db: Session = Depends(get_db)):
+    db_artifact = db.query(models.Artifact).filter(models.User.email == email).first()
+    if db_artifact:
+        raise HTTPException(status_code=400, detail=f"Artifact with name {artifact.name} "
+            f"and version {artifact.version} already exists")
+    db_artifact = models.Artifact(name=artifact.name, version=artifact.version, 
+        path=artifact.file.filename, type=artifact.type)
+    db.add(db_artifact)
+    db.commit()
+    db.refresh(db_artifact)
+    return db_artifact
 
 # Write file to subpath of mounted volume
 # Then store the full path inside of the database
@@ -113,4 +138,4 @@ async def list_artifacts(name: str = None):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-docker run -p 80:80 -v /Users/gkv/Startup/flighty/artifact/flighty-files:/code/flighty-files gvashishtha/flighty:artifact
+# docker run -p 80:80 -v /Users/gkv/Startup/flighty/artifact/flighty-files:/code/flighty-files gvashishtha/flighty:artifact

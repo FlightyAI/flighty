@@ -97,35 +97,3 @@ data:
   initdb.sql: |
     CREATE DATABASE flighty;
     USE flighty;
-    CREATE TABLE endpoints 
-      (
-        `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL UNIQUE,
-        PRIMARY KEY(`id`)
-      );
-    CREATE TABLE handlers
-      (
-        `id` INT NOT NULL AUTO_INCREMENT, 
-        `name` VARCHAR(256) NOT NULL,
-        `docker_image` VARCHAR(256) NOT NULL,
-        `prod_traffic` INT NOT NULL DEFAULT 0,
-        `shadow_traffic` INT NOT NULL DEFAULT 0,
-        `endpoint_id` INT,
-        PRIMARY KEY(`id`),
-        UNIQUE KEY `endpoint_handler` (`endpoint_id`, `name`),
-        FOREIGN KEY (`endpoint_id`) REFERENCES endpoints(`id`)
-      );
-    CREATE TABLE artifacts 
-      (
-        `id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(256) NOT NULL,
-        `path` VARCHAR(256) NOT NULL, `version` INT NOT NULL,
-        `type` VARCHAR(256),
-        PRIMARY KEY(`id`),
-        UNIQUE KEY `artifact_version` (`name`, `version`)
-      );
-    CREATE TABLE artifact_handler 
-      (
-        `handler_id` INT NOT NULL, `artifact_id` INT NOT NULL,
-        PRIMARY KEY(`handler_id`, `artifact_id`),
-        FOREIGN KEY (`handler_id`) REFERENCES handlers(`id`),
-        FOREIGN KEY (`artifact_id`) REFERENCES artifacts(`id`)
-      );
