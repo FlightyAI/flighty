@@ -7,7 +7,10 @@ metadata:
 spec:
   containers:
     - image: docker.io/gvashishtha/flighty:model_server
-      name: test
+      name: test          
+      env:
+        - name: FAST_API_ROOT
+          value: "/model1"
       imagePullPolicy: IfNotPresent
       #command: ["python"]
       volumeMounts:
@@ -24,3 +27,14 @@ spec:
     - name: model-store
       persistentVolumeClaim:
         claimName: model-store-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test
+spec:
+  ports:
+    - port: 80
+  selector:
+    run: test
+  clusterIP: None

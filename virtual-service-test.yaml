@@ -1,0 +1,36 @@
+# We want to make the control plane accessible from outside the cluster
+# so that we can test it with the Python client
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: model-external
+spec:
+  hosts: 
+  - "*"
+  gateways: 
+  - control-plane-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/model1/"
+    - uri:
+        prefix: "/model1"
+    rewrite:
+      uri: "/"
+    route:
+      - destination:
+          host: test
+          subset: v1
+          port:
+            number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: test
+spec:
+  host: test
+  subsets:
+  - name: v1
+    labels:
+      run: test

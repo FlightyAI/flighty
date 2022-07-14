@@ -5,9 +5,10 @@ from inspect import signature, Parameter
 from pydantic import BaseModel, create_model
 
 import json
+import os
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(root_path = os.environ.get("FAST_API_ROOT", "/"))
 # Get the types of the user's predict function
 sig = signature(main.predict)
 
