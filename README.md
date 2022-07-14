@@ -42,3 +42,28 @@ kubectl port-forward service/test 8000:80
 ```
 
 Open the web UI at 127.0.0.1:8000/docs to see your service up and running.
+
+
+
+## Install istio
+
+### (optional) Install kiali for monitoring
+
+```
+helm install \                                            
+  --namespace istio-system \
+  --set auth.strategy="anonymous" \
+  --repo https://kiali.org/helm-charts \
+  kiali-server \
+  kiali-server
+kubectl port-forward svc/kiali 20001:20001 -n istio-system
+```
+
+### Install and configure istio
+
+Create the gateway
+`kubectl create -f istio-gateway.yaml`
+
+Add the virtual services:
+
+`kubectl create -f virtual-service.yaml`

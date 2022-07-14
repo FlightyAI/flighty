@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from routers import artifact
 
+import os
 import uvicorn
 
-app = FastAPI()
+# We need a different root path when serving in cluster
+app = FastAPI(root_path = os.environ.get("FAST_API_ROOT", "/"))
 
 app.include_router(artifact.app)
 

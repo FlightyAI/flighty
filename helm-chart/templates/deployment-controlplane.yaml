@@ -24,6 +24,9 @@ spec:
       containers:
         - image: docker.io/gvashishtha/flighty:controlplane
           name: controlplane
+          env:
+          - name: FAST_API_ROOT
+            value: "/api/v1"
           ports:
             - containerPort: 80
               name: controlplane
