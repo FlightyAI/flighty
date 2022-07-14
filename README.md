@@ -1,36 +1,44 @@
 # Local setup
 
-## Install minikube
-
-https://minikube.sigs.k8s.io/docs/start/
-
-## Create pod
-
-Use private registry credentials:
-https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-
-Apply the template:
-`kubectl apply -f pod-create.yaml`
-
-## Give sufficient permissions to default service account for it to create pods
+## Deploy with Helm
 
 ```
-kubectl apply -f pod-role.yaml
-kubectl apply -f pod-rolebinding.yaml
+helm install flighty-cp helm-chart
 ```
 
-## Deploy database
+## Port-forward to check database is up
 
-`kubectl apply -f k8s-mysql/mysql-deployment.yaml`
+`kubectl port-forward service/mysql-external 3306:3306`
 
-### Expose pod on localhost
+Query the database in MySQL workbench to confirm the database is now serving.
 
-Directions are [from here](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/):
+## Port-forward control plane
+
+`kubectl port-forward service/controlplane-external 8001:80`
+
+## Upload required files
+
+Open the web UI at 127.0.0.1:8001/docs and upload two files:
 
 ```
-kubectl port-forward service/mysql-external 3306:3306
+file: Artifact.zip (containing zipped Python main.py with init() and predict())
+name: code-artifact
+version: 1
+type: code
 ```
 
-Access at this location: `http://127.0.0.1:TUNNEL_PORT`
+```
+file: Artifact.zip
+name: first-artifact
+version: 1
+type: code
+```
 
-Send a POST request to test creation of pod (just go to /docs and do it through UI)
+## Deploy and expose one-off service
+
+```
+kubectl create -f pod-create.yaml
+kubectl port-forward service/test 8000:80  
+```
+
+Open the web UI at 127.0.0.1:8000/docs to see your service up and running.
