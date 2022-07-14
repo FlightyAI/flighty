@@ -1,0 +1,4 @@
+apiVersion: v2
+name: flighty-ai
+version: 0.1.0
+description: A control plane to deploy machine laerning models as REST endpoints

@@ -1,0 +1,13 @@
+# We want to make the control plane accessible from outside the cluster
+# so that we can test it with the Python client
+apiVersion: v1
+kind: Service
+metadata:
+  name: controlplane-external
+spec:
+  type: NodePort
+  selector:
+    app: controlplane
+  ports:
+    # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+    - port: 80

@@ -12,11 +12,11 @@ spec:
       #command: ["python"]
       volumeMounts:
             - name: model-store
-              mountPath: /code/flighty-files/first-artifact/2
-              subPath: first-artifact/2
+              mountPath: /code/flighty-files/first-artifact/1
+              subPath: first-artifact/1
             - name: model-store
               mountPath: /code/customer_code
-              subPath: code-artifact/3
+              subPath: code-artifact/1
   imagePullSecrets:
     - name: regcred
   restartPolicy: Always

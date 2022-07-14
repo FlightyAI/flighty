@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controlplane
+spec:
+  selector:
+    matchLabels:
+      app: controlplane
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: controlplane
+    spec:
+      serviceAccountName: flighty-control-plane
+      initContainers:
+        - name: "wait-for-alembic"
+          image: "ghcr.io/groundnuty/k8s-wait-for:v1.6"
+          imagePullPolicy: Always
+          args:
+            - "job"
+            - "db-upgrade"
+      containers:
+        - image: docker.io/gvashishtha/flighty:controlplane
+          name: controlplane
+          ports:
+            - containerPort: 80
+              name: controlplane
+          volumeMounts:
+            - name: model-store
+              mountPath: /code/flighty-files
+      volumes:
+        - name: model-store
+          persistentVolumeClaim:
+            claimName: model-store-pvc
+      imagePullSecrets:
+        - name: regcred

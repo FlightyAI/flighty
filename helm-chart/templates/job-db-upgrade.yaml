@@ -3,13 +3,21 @@ kind: Job
 metadata:
   name: db-upgrade
 spec:
-  backoffLimit: 1
+  backoffLimit: 6
   template:
     metadata:
       labels:
         job: db-upgrade
     spec:
-      restartPolicy: Never
+      serviceAccountName: flighty-control-plane
+      restartPolicy: OnFailure
+      initContainers:
+        - name: "wait-for-mysql"
+          image: "ghcr.io/groundnuty/k8s-wait-for:v1.6"
+          imagePullPolicy: Always
+          args:
+            - "service"
+            - "mysql"
       containers:
         - name: alembic
           image: docker.io/gvashishtha/flighty:alembic
