@@ -47,7 +47,12 @@ Open the web UI at 127.0.0.1:8000/docs to see your service up and running.
 
 ## Install istio
 
+
+
 ### (optional) Install kiali for monitoring
+
+First install Prometheus for Istio add-on:
+`kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.14/samples/addons/prometheus.yaml`
 
 ```
 helm install \                                            
