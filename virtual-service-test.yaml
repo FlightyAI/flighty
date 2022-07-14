@@ -23,14 +23,3 @@ spec:
           subset: v1
           port:
             number: 80
----
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: test
-spec:
-  host: test
-  subsets:
-  - name: v1
-    labels:
-      run: test

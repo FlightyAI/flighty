@@ -72,3 +72,4 @@ Create the gateway
 Add the virtual services:
 
 `kubectl create -f virtual-service.yaml`
+
