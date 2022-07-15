@@ -11,7 +11,6 @@ import os
 import shutil
 import uvicorn
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('artifact')
 
 app =  APIRouter(prefix="/artifacts")

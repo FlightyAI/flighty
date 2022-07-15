@@ -8,7 +8,7 @@ from typing import Union
 from fastapi import UploadFile
 from models import ArtifactTypeEnum
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import AnyUrl, BaseModel
 
 
 class ArtifactBase(BaseModel):
@@ -35,7 +35,7 @@ class EndpointBase(BaseModel):
 
 class Endpoint(EndpointBase):
     '''Returned from endpoint list method'''
-    url: HttpUrl
+    url: AnyUrl
 
     class Config:
         '''Database config'''

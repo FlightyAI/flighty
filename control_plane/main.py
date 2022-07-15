@@ -1,5 +1,5 @@
 '''Main router for Fast API app'''
-
+import logging
 import os
 
 from fastapi import FastAPI
@@ -7,6 +7,8 @@ from routers import artifact
 from routers import endpoint
 
 import uvicorn
+
+logging.basicConfig(level=logging.DEBUG)
 
 # We need a different root path when serving in cluster
 app = FastAPI(root_path = os.environ.get("FAST_API_ROOT", "/"))
@@ -20,4 +22,4 @@ async def root():
     return {"message": "This is the flighty root"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=80)

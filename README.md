@@ -5,6 +5,9 @@
 ```
 helm install flighty-cp helm-chart
 ```
+Then open up the URL
+`127.0.0.1/api/v1/docs` and you should see the application. If you get a 503 about missing headers, 
+what finally solved it for me was to just uninstall and reinstall istio. Reinstalled using `istioctl`.
 
 ## Port-forward to check database is up
 

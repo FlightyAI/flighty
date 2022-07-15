@@ -19,8 +19,10 @@ Then use your debugger on the main.py file for fast apiyou've been developing.
 
 ## Build docker image
 
+We need to mount the artifacts directories and the kubeconfig directories in the expected locations.
 ```
-
-docker run -p 80:80 -v /Users/gkv/Startup/flighty/flighty-files:/code/flighty-files \
- gvashishtha/flighty:controlplane
+docker build . -t gvashishtha/flighty:controlplane
+docker run -p 8000:8000 -v /Users/gkv/Startup/flighty/flighty-files:/code/flighty-files \
+  -v ~/.kube/config:/kube/config --env KUBECONFIG=/kube/config \
+  gvashishtha/flighty:controlplane
 ```

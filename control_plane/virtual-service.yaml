@@ -3,7 +3,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: model-external
+  name: {{ endpoint_name }}
 spec:
   hosts: 
   - "*"
@@ -12,14 +12,14 @@ spec:
   http:
   - match:
     - uri:
-        prefix: "/model1/"
+        prefix: "/{{ endpoint_name }}/"
     - uri:
-        prefix: "/model1"
+        prefix: "/{{ endpoint_name }}"
     rewrite:
       uri: "/"
     route:
       - destination:
-          host: test
+          host: {{ endpoint_name }}
           subset: v1
           port:
             number: 80

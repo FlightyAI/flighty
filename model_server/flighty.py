@@ -1,6 +1,5 @@
 import logging
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('flighty')
 
 logger.info('Flighty was imported')

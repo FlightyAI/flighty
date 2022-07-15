@@ -6,7 +6,6 @@ import logging
 import os
 from pydantic import BaseModel
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 class User(BaseModel):

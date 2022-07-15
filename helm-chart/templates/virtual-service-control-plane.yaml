@@ -1,0 +1,24 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1beta1
+metadata:
+  name: controlplane-external
+  namespace: default
+spec:
+  hosts:
+    - '*'
+  gateways:
+    - control-plane-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /api/v1/
+        - uri:
+            prefix: /api/v1
+      route:
+        - destination:
+            host: controlplane
+            port:
+              number: 80
+      rewrite:
+        uri: /
+
