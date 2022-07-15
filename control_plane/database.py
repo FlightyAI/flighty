@@ -30,10 +30,11 @@ finally:
 
 SQLALCHEMY_DATABASE_URL = (f"mysql://{db_conn_info['user']}:{db_conn_info['password']}"
   f"@{db_conn_info['host']}/{db_conn_info['database']}")
-# SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
+# Use pool_pre_ping to avoid "SQL server has gone away" error after 8 hours of inactivity
+# more: https://docs.sqlalchemy.org/en/14/core/pooling.html#disconnect-handling-pessimistic
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL#, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, pool_pre_ping=True
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

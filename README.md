@@ -43,11 +43,7 @@ kubectl port-forward service/test 8000:80
 
 Open the web UI at 127.0.0.1:8000/docs to see your service up and running.
 
-
-
 ## Install istio
-
-
 
 ### (optional) Install kiali for monitoring
 
@@ -73,3 +69,33 @@ Add the virtual services:
 
 `kubectl create -f virtual-service.yaml`
 
+## Generate SDK
+
+Install swagger code gen:
+
+`brew install swagger-codegen`
+
+Then generate the Python SDK:
+
+`swagger-codegen generate -i http://localhost/api/v1/openapi.json -l python -o generated-python`
+
+and install the Python SDK:
+
+`python3 setup.py install --user`
+
+Then open a Python REPL and upload an artifact:
+
+```
+import swagger_client
+from swagger_client.rest import ApiException
+from pprint import pprint
+
+# create an instance of the API class
+api_instance = swagger_client.DefaultApi(swagger_client.ApiClient(configuration))
+file = 'README.md' # str | 
+name = 'name_example' # str | 
+version = 56 # int | 
+type = swagger_client.ArtifactTypeEnum().MODEL
+
+api_instance.create_artifact_artifacts_create_post('README.md', name, version, type)
+```
