@@ -1,6 +1,6 @@
 import models
 import schemas
-from database import SessionLocal
+from database import get_db
 
 from fastapi import Depends, APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import PositiveInt
@@ -16,13 +16,6 @@ logger = logging.getLogger('artifact')
 
 app =  APIRouter(prefix="/artifacts")
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.post("/create", response_model=schemas.Artifact)
 def create_artifact(

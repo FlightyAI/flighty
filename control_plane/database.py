@@ -13,6 +13,8 @@ db_conn_info = {
     "database": "flighty"
 }
 
+cnx = None
+
 try:   
     cnx = mysql.connector.connect(**db_conn_info)
 except mysql.connector.errors.DatabaseError:
@@ -39,3 +41,15 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+def get_db():
+    """
+    get_db
+
+    Utility function to get the database
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
