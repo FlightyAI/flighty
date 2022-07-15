@@ -37,6 +37,7 @@ class Handler(Base):
     __tablename__ = "handlers"
 
     id = Column(Integer, primary_key=True, index=True)
+    version = Column(Integer, nullable=False, default=0)
     name = Column(String(256), index=True)
     docker_image = Column(String(256), nullable=False)
     prod_traffic = Column(Integer, nullable=False, default=0)

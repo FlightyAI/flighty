@@ -3,7 +3,6 @@ import schemas
 from database import get_db
 
 from fastapi import Depends, APIRouter, File, Form, HTTPException, UploadFile
-from pydantic import PositiveInt
 from sqlalchemy.orm import Session
 
 import logging
@@ -20,7 +19,7 @@ app =  APIRouter(prefix="/artifacts")
 def create_artifact(
         file: UploadFile = File(...), 
         name: str = Form(...), 
-        version: PositiveInt = Form(...), 
+        version: int = Form(...), 
         type: models.ArtifactTypeEnum = Form(...), 
         db: Session = Depends(get_db)):
     db_path = os.path.join('flighty-files', name, str(version))

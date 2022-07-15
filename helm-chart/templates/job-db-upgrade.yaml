@@ -29,7 +29,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              alembic upgrade 864bdc030ff3
+              alembic upgrade 26dd889ef799
               x=$(echo $?); 
               if [ $x -eq 0 ]; then
                 curl -fsI -X POST http://localhost:15020/quitquitquit

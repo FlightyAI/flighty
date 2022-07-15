@@ -40,3 +40,15 @@ class Endpoint(EndpointBase):
     class Config:
         '''Database config'''
         orm_mode = True
+
+class HandlerBase(BaseModel):
+    '''Handler base class'''
+    name: str
+    version: int
+    endpoint: str
+    docker_image: str
+
+class Handler(HandlerBase):
+    class Config:
+        '''Database config'''
+        orm_mode = True

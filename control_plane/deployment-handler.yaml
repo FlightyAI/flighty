@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ handler_name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ handler_name }}
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ handler_name }}
+    spec:
+      containers:
+        - image: docker.io/gvashishtha/flighty:model_server
+          name: controlplane
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: FAST_API_ROOT
+              value: /"{{ handler_name }}""
+          imagePullPolicy: IfNotPresent
+          #command: ["python"]
+          volumeMounts:
+                - name: model-store
+                  mountPath: /code/flighty-files/{{ model_artifact }}/{{ model_version }}
+                  subPath: {{ model_artifact }}/{{ model_version }}
+                - name: model-store
+                  mountPath: /code/customer_code
+                  subPath: {{ code_artifact }}/{{ code_version }}
+      volumes:
+        - name: model-store
+          persistentVolumeClaim:
+            claimName: model-store-pvc
+      imagePullSecrets:
+        - name: regcred
