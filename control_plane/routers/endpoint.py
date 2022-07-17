@@ -39,7 +39,7 @@ def create_endpoint(
         raise HTTPException(status_code=400, detail=f"Endpoint with name {name} "
             "already exists.")
     logger.debug("we're about to create destination rule")
-    create_destination_rule(endpoint_name=name)
+    #create_destination_rule(endpoint_name=name)
     create_virtual_service(endpoint_name=name)
 
     db_endpoint = models.Endpoint(name=name)

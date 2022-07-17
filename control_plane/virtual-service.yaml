@@ -20,6 +20,5 @@ spec:
     route:
       - destination:
           host: {{ endpoint_name }}
-          subset: v1
           port:
             number: 80

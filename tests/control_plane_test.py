@@ -28,19 +28,17 @@ class TestArtifact(unittest.TestCase):
     def test_model_artifact_create(self):
         '''Test that we get well-formed JSON with name value from model artifact create'''
         with open('./README.md', 'rb') as f:
-            file = f.read()
-        response = requests.post("/".join([base_url, 'artifacts', 'create']), 
-            files={'file': file, 'name': (None, 'model-artifact'),
-            'version': (None, 1), 'type': (None, 'model')}).json()
+            response = requests.post("/".join([base_url, 'artifacts', 'create']), 
+                files={'file': f, 'name': (None, 'model-artifact'),
+                'version': (None, 1), 'type': (None, 'model')}).json()
         self.assertEqual(response['name'], 'model-artifact')
     
     def test_code_artifact_create(self):
         '''Test that we get well-formed JSON with name value from code artifact create'''
         with open('./model_server/customer_code/Archive.zip', 'rb') as f:
-            file = f.read()
-        response = requests.post("/".join([base_url, 'artifacts', 'create']), 
-            files={'file': file, 'name': (None, 'code-artifact'),
-            'version': (None, 1), 'type': (None, 'code')}).json()
+            response = requests.post("/".join([base_url, 'artifacts', 'create']), 
+                files={'file': f, 'name': (None, 'code-artifact'),
+                'version': (None, 1), 'type': (None, 'code')}).json()
         self.assertEqual(response['name'], 'code-artifact')
     
     def test_artifact_list(self):

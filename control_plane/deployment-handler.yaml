@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ handler_name }}
+  namespace: {{ namespace }}
 spec:
   selector:
     matchLabels:
@@ -21,7 +22,7 @@ spec:
               name: http
           env:
             - name: FAST_API_ROOT
-              value: /"{{ handler_name }}""
+              value: /{{ endpoint_name }}
           imagePullPolicy: IfNotPresent
           #command: ["python"]
           volumeMounts:

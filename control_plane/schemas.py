@@ -50,9 +50,16 @@ class HandlerBase(BaseModel):
     name: str
     version: int
     endpoint: str
-    docker_image: str
+    docker_image: str = 'docker.io/gvashishtha/flighty:model_server'
 
 class Handler(HandlerBase):
     class Config:
         '''Database config'''
         orm_mode = True
+
+class HandlerCreate(HandlerBase):
+    model_artifact: str
+    code_artifact: str
+    model_artifact_version: int = None
+    code_artifact_version: int = None
+    version: int = None
