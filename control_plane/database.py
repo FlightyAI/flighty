@@ -1,37 +1,17 @@
-import mysql.connector
+import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-# HACK - automatically discover whether we're on localhost or not
-db_conn_info = {
-    "user": "root",
-    "password": "password",
-    "host": "mysql.default.svc.cluster.local",
-    "database": "flighty"
-}
+user = 'root'
+password = 'password'
+db = 'flighty'
 
-cnx = None
+DB_URL = os.environ.get("DB_URL", default="127.0.0.1")
 
-try:   
-    cnx = mysql.connector.connect(**db_conn_info)
-except mysql.connector.errors.DatabaseError:
-    try:
-        # Attempt to connect to localhost if we are doing local development
-        db_conn_info['host'] = '127.0.0.1'
-        cnx = mysql.connector.connect(**db_conn_info)
-        
-    except mysql.connector.errors.DatabaseError:
-        # if we're running in Docker
-        db_conn_info['host'] = 'host.docker.internal'
-        cnx = mysql.connector.connect(**db_conn_info)
-finally:
-    cnx.close()
-
-SQLALCHEMY_DATABASE_URL = (f"mysql://{db_conn_info['user']}:{db_conn_info['password']}"
-  f"@{db_conn_info['host']}/{db_conn_info['database']}")
+SQLALCHEMY_DATABASE_URL = f"mysql://{user}:{password}@{DB_URL}/{db}"
 
 # Use pool_pre_ping to avoid "SQL server has gone away" error after 8 hours of inactivity
 # more: https://docs.sqlalchemy.org/en/14/core/pooling.html#disconnect-handling-pessimistic

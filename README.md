@@ -1,9 +1,15 @@
 # Local setup
 
+## Running tests
+
+Setup with: `./initialize_helm.sh`
+
+Clean up with: `./clean-up_helm.sh`
+
 ## Deploy with Helm
 
 ```
-helm install flighty-cp helm-chart
+helm install flighty-cp helm-chart --namespace=flighty-ai
 ```
 Then open up the URL
 `127.0.0.1/api/v1/docs` and you should see the application. If you get a 503 about missing headers, 

@@ -20,11 +20,11 @@ logger = logging.getLogger('endpoint')
 
 @app.post("/create", response_model=schemas.Endpoint)
 def create_endpoint(
-        name: str, # constrain endpoint name to be a word
+        endpoint: schemas.EndpointCreate,
         req: Request,
         db: Session = Depends(get_db)):
     '''Creates the specified endpoint, fails if it already exists'''
-
+    name = endpoint.name
     parsed_uri = urlparse(req.url._url)  # pylint: disable=protected-access
     base_path = "{uri.scheme}://{uri.netloc}/".format(uri=parsed_uri)
 

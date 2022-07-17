@@ -9,7 +9,6 @@ import schemas
 
 from kubernetes_api import create_deployment, create_service
 
-
 import uvicorn
 
 from database import get_db

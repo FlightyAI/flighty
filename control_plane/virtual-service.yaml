@@ -8,7 +8,7 @@ spec:
   hosts: 
   - "*"
   gateways: 
-  - control-plane-gateway
+  - {{ gateway_namespace}}/{{ gateway_name }}
   http:
   - match:
     - uri:

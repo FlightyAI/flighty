@@ -27,12 +27,21 @@ spec:
           env:
           - name: FAST_API_ROOT
             value: "/api/v1"
+          - name: DB_URL
+            value: mysql.{{ .Release.Namespace }}.svc.cluster.local
+          - name: GATEWAY_NAME
+            value: {{ .Values.gatewayName }}
+          - name: GATEWAY_NAMESPACE
+            value: {{ .Values.gatewayNamespace }}
+          - name: K8S_NAMESPACE
+            value: {{ .Release.Namespace }}
           ports:
             - containerPort: 80
               name: controlplane
           volumeMounts:
             - name: model-store
               mountPath: /code/flighty-files
+          imagePullPolicy: Always
       volumes:
         - name: model-store
           persistentVolumeClaim:

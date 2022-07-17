@@ -33,6 +33,10 @@ class EndpointBase(BaseModel):
     '''Endpoint base class'''
     name: str
 
+class EndpointCreate(EndpointBase):
+    '''Class to be used to create endpoint'''
+    pass
+
 class Endpoint(EndpointBase):
     '''Returned from endpoint list method'''
     url: AnyUrl

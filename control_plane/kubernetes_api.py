@@ -17,6 +17,10 @@ logger = logging.getLogger('kubernetes_api')
 
 GROUP = 'networking.istio.io' # str | The custom resource's group name
 VERSION = 'v1alpha3'
+GATEWAY_NAME = os.environ.get("GATEWAY_NAME", "control-plane-gateway")
+GATEWAY_NAMESPACE = os.environ.get("GATEWAY_NAMESPACE", "default")
+NAMESPACE = os.environ.get("K8S_NAMESPACE", "default")
+
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -38,7 +42,7 @@ def load_and_parse_yaml(file_path, **kwargs):
     logger.debug('deployment template is %s', deployment_template)
     return deployment_template
 
-def create_destination_rule(endpoint_name, namespace='default'):
+def create_destination_rule(endpoint_name, namespace=NAMESPACE):
     '''creates a destination rule from the YAML file in this directory'''
     file_path = os.path.join(__location__, 'destination-rule.yaml')
 
@@ -46,7 +50,11 @@ def create_destination_rule(endpoint_name, namespace='default'):
 
     myclient = client.CustomObjectsApi()
     plural = 'destinationrules'
-    body = load_and_parse_yaml(file_path, endpoint_name=endpoint_name)
+    body = load_and_parse_yaml(
+        file_path, 
+        endpoint_name=endpoint_name,
+        gateway_name=GATEWAY_NAME,
+        gateway_namespace=GATEWAY_NAMESPACE)
 
     try:
         api_response = myclient.create_namespaced_custom_object(
@@ -58,7 +66,7 @@ def create_destination_rule(endpoint_name, namespace='default'):
         raise e
 
 def create_deployment(handler_name, model_artifact, 
-    model_version, code_artifact, code_version, namespace='default'):
+    model_version, code_artifact, code_version, namespace=NAMESPACE):
     '''Creates a deployment using the deployment-handler.yaml template'''
 
     file_path = os.path.join(__location__, 'deployment-handler.yaml')
@@ -77,7 +85,7 @@ def create_deployment(handler_name, model_artifact,
         logger.debug("Exception when calling create_namespaced_deployment: %s\n", e)
         raise e
 
-def create_service(handler_name, namespace='default'):
+def create_service(handler_name, namespace=NAMESPACE):
     '''Creates a service using the service-handler.yaml template'''
 
     file_path = os.path.join(__location__, 'service-handler.yaml')
@@ -110,13 +118,17 @@ def create_service(handler_name, namespace='default'):
 # # print("Listing pods with their IPs:")
 # # v1.create_namespaced_pod(namespace='default', body=pod)
 
-def create_virtual_service(endpoint_name, namespace='default'):
+def create_virtual_service(endpoint_name, namespace=NAMESPACE):
     '''Creates a virtual service with the specified name in the specified namespace'''
     file_path = os.path.join(__location__, 'virtual-service.yaml')
 
     myclient = client.CustomObjectsApi()
     plural = 'virtualservices'
-    body = load_and_parse_yaml(file_path, endpoint_name=endpoint_name)
+    body = load_and_parse_yaml(
+        file_path, 
+        endpoint_name=endpoint_name,
+        gateway_name=GATEWAY_NAME,
+        gateway_namespace=GATEWAY_NAMESPACE)
 
     try:
         api_response = myclient.create_namespaced_custom_object(

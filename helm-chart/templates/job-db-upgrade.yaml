@@ -16,13 +16,16 @@ spec:
       initContainers:
         - name: "wait-for-mysql"
           image: "ghcr.io/groundnuty/k8s-wait-for:v1.6"
-          imagePullPolicy: Always
           args:
             - service
             - mysql
       containers:
         - name: alembic
+          imagePullPolicy: Always
           image: docker.io/gvashishtha/flighty:alembic
+          env:
+          - name: DB_URL
+            value: mysql.{{ .Release.Namespace }}.svc.cluster.local
           command:
             # once alembic succeeds, kill envoy-proxy manually so we can exit, see
             # https://stackoverflow.com/questions/54921054/ for more info

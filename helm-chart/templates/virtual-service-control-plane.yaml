@@ -2,12 +2,11 @@ kind: VirtualService
 apiVersion: networking.istio.io/v1beta1
 metadata:
   name: controlplane-external
-  namespace: default
 spec:
   hosts:
     - '*'
   gateways:
-    - control-plane-gateway
+    - {{ .Values.gatewayNamespace }}/{{ .Values.gatewayName }}
   http:
     - match:
         - uri:
