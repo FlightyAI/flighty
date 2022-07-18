@@ -9,10 +9,10 @@ import unittest
 
 
 # If testing with Docker use this
-# base_url = 'http://127.0.0.1:8000'
+base_url = 'http://127.0.0.1:8000'
 
 # If testing with full Kubernetes setup use this
-base_url = 'http://127.0.0.1/api/v1'
+# base_url = 'http://127.0.0.1/api/v1'
 
 
 def create_artifact(**kwargs):
@@ -48,6 +48,21 @@ def delete_endpoint(**kwargs):
 class TestInvoke(unittest.TestCase):
     # Create handler with customer code archive
     # Invoke that handler
+    def test_invoke(self):
+        '''Test that invoking dummy model works'''
+        with open('./README.md', 'rb') as f:
+            create_artifact(file=f, name=(None, 'model-artifact'),
+                version=(None, 1), type=(None, 'model'))
+
+        with open('./model_server/customer_code/Archive.zip', 'rb') as f:
+            create_artifact(file=f, name=(None, 'code-artifact'),
+                version=(None, 1), type=(None, 'code'))
+        create_endpoint(name='doc-rec')
+        create_handler(name='rules', version=1, model_artifact='model-artifact',
+            code_artifact='code-artifact', model_artifact_version=1, code_artifact_version=1,
+            endpoint='doc-rec')
+        
+        
     pass
 
 class TestHandler(unittest.TestCase):
