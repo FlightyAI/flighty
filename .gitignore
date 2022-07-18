@@ -131,3 +131,4 @@ dmypy.json
 .vscode/
 config.txt
 flighty-files/*
+.DS_Store
