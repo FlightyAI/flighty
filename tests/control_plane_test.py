@@ -9,10 +9,10 @@ import unittest
 
 
 # If testing with Docker use this
-base_url = 'http://127.0.0.1:8000'
+# base_url = 'http://127.0.0.1:8000'
 
 # If testing with full Kubernetes setup use this
-# base_url = 'http://127.0.0.1/api/v1'
+base_url = 'http://127.0.0.1/api/v1'
 
 
 def create_artifact(**kwargs):
@@ -44,6 +44,11 @@ def delete_endpoint(**kwargs):
     '''Delete specified endpoint'''
     return requests.delete(f'{base_url}/endpoints/delete',
             json = kwargs)
+
+class TestInvoke(unittest.TestCase):
+    # Create handler with customer code archive
+    # Invoke that handler
+    pass
 
 class TestHandler(unittest.TestCase):
     @classmethod

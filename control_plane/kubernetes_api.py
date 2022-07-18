@@ -21,6 +21,9 @@ GATEWAY_NAME = os.environ.get("GATEWAY_NAME", "control-plane-gateway")
 GATEWAY_NAMESPACE = os.environ.get("GATEWAY_NAMESPACE", "default")
 NAMESPACE = os.environ.get("K8S_NAMESPACE", "flighty-ai")
 
+# TODO: impersonate the user account so we can discover permissions issues sooner
+# core_client = client.CoreV1Api(header_name='Impersonate-User', header_value='flighty-control-plane')
+
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -51,7 +54,7 @@ def create_destination_rule(endpoint_name, namespace=NAMESPACE):
     myclient = client.CustomObjectsApi()
     plural = 'destinationrules'
     body = load_and_parse_yaml(
-        file_path, 
+        file_path,
         endpoint_name=endpoint_name,
         gateway_name=GATEWAY_NAME,
         gateway_namespace=GATEWAY_NAMESPACE)

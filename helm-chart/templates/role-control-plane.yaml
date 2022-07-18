@@ -5,10 +5,10 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["services"]
-    verbs: ["get", "watch", "list"]
+    verbs: ["get", "create", "watch", "list", "update", "patch", "delete"]
   - apiGroups: ["apps"]
     resources: [ "deployments"]
-    verbs: ["get", "create", "watch", "list", "update", "delete"]
+    verbs: ["get", "create", "watch", "list", "update", "patch", "delete"]
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["get", "watch", "list"]
@@ -17,4 +17,4 @@ rules:
     verbs: ["get", "create", "list", "delete"]
   - apiGroups: ["networking.istio.io"]
     resources: ["destinationrules", "virtualservices"]
-    verbs: ["get", "create", "watch", "list", "update", "delete"]
+    verbs: ["get", "create", "watch", "list", "update", "patch", "delete"]
