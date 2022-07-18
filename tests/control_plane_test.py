@@ -8,7 +8,11 @@ import requests
 import unittest
 
 
-base_url = 'http://127.0.0.1:8000' # 'http://127.0.0.1/api/v1'
+# If testing with Docker use this
+base_url = 'http://127.0.0.1:8000' 
+
+# If testing with full Kubernetes setup use this
+base_url = 'http://127.0.0.1/api/v1'
 
 class TestEndpoint(unittest.TestCase):
     '''TODO - Use in-memory DB to make these tests have no side-effects'''

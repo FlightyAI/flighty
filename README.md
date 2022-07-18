@@ -12,8 +12,25 @@ Clean up with: `./clean-up_helm.sh`
 helm install flighty-cp helm-chart --namespace=flighty-ai
 ```
 Then open up the URL
-`127.0.0.1/api/v1/docs` and you should see the application. If you get a 503 about missing headers, 
-what finally solved it for me was to just uninstall and reinstall istio. Reinstalled using `istioctl`.
+`127.0.0.1/api/v1/docs` and you should see the application. If you get a 503 saying 
+  ```
+  upstream connect error or disconnect/reset before headers. 
+  reset reason: connection termination
+  ```, 
+what finally solved it for me was to just uninstall and reinstall istio.
+
+### Uninstalling and reinstalling istio
+
+Uninstall istio: `istioctl x uninstall --purge`
+
+Install again: `istioctl install`
+Recreate gateway in default namespace: 
+
+```
+kubectl config set-context --current --namespace=default
+kubectl apply -f istio-gateway.yaml
+kubectl config set-context --current --namespace=flighty-ai
+```
 
 ## Port-forward to check database is up
 
