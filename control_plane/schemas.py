@@ -39,6 +39,10 @@ class EndpointCreate(EndpointBase):
     '''Class to be used to create endpoint'''
     pass
 
+class EndpointDelete(EndpointBase):
+    '''Class to be used to delete endpoint'''
+    pass
+
 class Endpoint(EndpointBase):
     '''Returned from endpoint list method'''
     url: AnyUrl = ''
@@ -50,9 +54,13 @@ class Endpoint(EndpointBase):
 class HandlerBase(BaseModel):
     '''Handler base class'''
     name: str
-    version: int
+    version: int = 0
     endpoint: str
     docker_image: str = 'docker.io/gvashishtha/flighty:model_server'
+
+class HandlerDelete(HandlerBase):
+    '''For deleting handlers'''
+    pass
 
 class Handler(HandlerBase):
     class Config:

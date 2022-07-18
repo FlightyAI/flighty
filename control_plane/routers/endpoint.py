@@ -82,7 +82,7 @@ async def list_endpoints(name: str = None, db: Session = Depends(get_db)):
 
 
 @app.delete("/delete")
-async def delete_endpoint(endpoint: schemas.Endpoint, db: Session = Depends(get_db)):
+async def delete_endpoint(endpoint: schemas.EndpointDelete, db: Session = Depends(get_db)):
     '''Validates that Endpoint exists, then deletes from DB'''
 
     # Do some validation

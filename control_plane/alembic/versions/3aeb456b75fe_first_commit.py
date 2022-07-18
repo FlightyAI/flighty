@@ -1,8 +1,8 @@
-"""first commit
+"""first_commit
 
-Revision ID: 20653deb0363
+Revision ID: 3aeb456b75fe
 Revises: 
-Create Date: 2022-07-18 11:08:12.098146
+Create Date: 2022-07-18 14:51:00.656091
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '20653deb0363'
+revision = '3aeb456b75fe'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -45,7 +45,7 @@ def upgrade() -> None:
     sa.Column('endpoint_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['endpoint_id'], ['endpoints.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('endpoint_id', 'name', name='endpoint_handler')
+    sa.UniqueConstraint('endpoint_id', 'name', 'version', name='endpoint_handler_version')
     )
     op.create_index(op.f('ix_handlers_id'), 'handlers', ['id'], unique=False)
     op.create_index(op.f('ix_handlers_name'), 'handlers', ['name'], unique=False)

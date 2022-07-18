@@ -48,6 +48,9 @@ class Handler(Base):
     shadow_traffic = Column(Integer, nullable=False, default=0)
     endpoint_id = Column(Integer, ForeignKey("endpoints.id"))
     endpoint = relationship("Endpoint", back_populates="handlers")
-    UniqueConstraint(endpoint_id, name, name='endpoint_handler')
+    UniqueConstraint(endpoint_id, name, version, name='endpoint_handler_version')
     artifacts = relationship("Artifact", secondary=association_table, back_populates="handlers")
+
+    def __repr__(self):
+        return f'name: {self.name}, version: {self.version}'
 

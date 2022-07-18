@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ handler_name }}
+  name: {{ deployment_name }}
   namespace: {{ namespace }}
 spec:
   selector:

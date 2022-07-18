@@ -2,10 +2,18 @@
 
 Do this after changing the database model in database.py
 
+First generate a "clean database." Edit `alembicCommand` in values.yaml to be `--version`.
+
+Then initialize the kubernetes cluster with `./initialize-helm.sh` and port forward with `kubectl port-forward service/mysql-external 3306:3306`
+
+Delete the existing migration under alembic/versions: `rm alembic/versions/*.py`
+
 ```
-alembic revision --autogenerate -m "<commit name>"
+alembic revision --autogenerate -m "first_commit"
 alembic upgrade head
 ```
+
+Then change the command under `alembicCommand` to be `upgrade <hash of your version>`
 
 ## Testing Python code locally
 
@@ -34,8 +42,7 @@ docker run -p 8000:80 -v /Users/gkv/Startup/flighty/flighty-files:/code/flighty-
 ```
 docker build . -f dbmigrate.Dockerfile -t gvashishtha/flighty:alembic
 docker run --env DB_URL=host.docker.internal \
-  gvashishtha/flighty:alembic upgrade 20653
-  history -rcurrent:+2
+  gvashishtha/flighty:alembic upgrade 3aeb456
 ```
 For debugging migration not found do:
 ```

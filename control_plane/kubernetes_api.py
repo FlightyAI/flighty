@@ -65,15 +65,16 @@ def create_destination_rule(endpoint_name, namespace=NAMESPACE):
             "Exception when calling CustomObjectsApi->create_cluster_custom_object: %s\n", e)
         raise e
 
-def create_deployment(handler_name, model_artifact, 
+def create_deployment(handler_name, handler_version, model_artifact, 
     model_version, code_artifact, code_version, endpoint_name):
     '''Creates a deployment using the deployment-handler.yaml template'''
 
     file_path = os.path.join(__location__, 'deployment-handler.yaml')
+    deployment_name = f'{endpoint_name}-{handler_name}-{handler_version}'
     body = load_and_parse_yaml(
-        file_path, handler_name=handler_name, model_artifact=model_artifact,
+        file_path, deployment_name=deployment_name, model_artifact=model_artifact,
         model_version=model_version, code_version=code_version,
-        code_artifact=code_artifact, endpoint_name=endpoint_name,
+        code_artifact=code_artifact, endpoint_name=endpoint_name, handler_name=handler_name,
         namespace=NAMESPACE)
     api = client.AppsV1Api()
 
@@ -86,12 +87,13 @@ def create_deployment(handler_name, model_artifact,
         logger.debug("Exception when calling create_namespaced_deployment: %s\n", e)
         raise e
 
-def create_service(handler_name):
+def create_service(handler_name, handler_version, endpoint_name):
     '''Creates a service using the service-handler.yaml template'''
 
     file_path = os.path.join(__location__, 'service-handler.yaml')
+    service_name = f'{endpoint_name}-{handler_name}-{handler_version}'
     body = load_and_parse_yaml(
-        file_path, handler_name=handler_name, namespace=NAMESPACE)
+        file_path, service_name=service_name, handler_name=handler_name, namespace=NAMESPACE)
     api = client.CoreV1Api()
 
     try:
@@ -165,4 +167,30 @@ def delete_virtual_service(endpoint_name):
         logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling delete_namespaced_custom_object: %s\n", e)
+        raise e
+
+def delete_deployment(handler_name, handler_version, endpoint_name):
+    '''Deletes virtual service with specified name'''
+    deployment_name = f'{endpoint_name}-{handler_name}-{handler_version}'
+    api = client.AppsV1Api()
+    try:
+        api_response =api.delete_namespaced_deployment(name=deployment_name,
+            namespace=NAMESPACE)
+        logger.debug(api_response)
+    except ApiException as e:
+        logger.debug("Exception when calling delete_namespaced_custom_object: %s\n", e)
+        raise e
+
+def delete_service(handler_name, handler_version, endpoint_name):
+    '''Creates a service using the service-handler.yaml template'''
+    service_name = f'{endpoint_name}-{handler_name}-{handler_version}'
+    api = client.CoreV1Api()
+
+    try:
+        api_response = api.delete_namespaced_service(
+            name=service_name, namespace=NAMESPACE
+        )
+        logger.debug(api_response)
+    except ApiException as e:
+        logger.debug("Exception when calling delete_namespaced_service: %s\n", e)
         raise e

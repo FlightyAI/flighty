@@ -3,11 +3,14 @@ handler.py
 
 Contains the functionality for the /handlers path of the Fast API endpoint
 """
-
+import crud
 import models
+from requests import delete
 import schemas
 
-from kubernetes_api import create_deployment, create_service, add_handler_to_endpoint
+from kubernetes_api import create_deployment, create_service, \
+    add_handler_to_endpoint, delete_deployment, delete_service
+from .endpoint import raise_if_endpoint_does_not_exist, raise_if_endpoint_exists
 
 import uvicorn
 
@@ -20,6 +23,32 @@ app = APIRouter(prefix="/handlers")
 
 
 
+def raise_if_handler_does_not_exist(db, name, version, endpoint):
+    '''Raises 400 error if handler does not exist'''
+
+    if not(crud.handler_exists(db, name, version, endpoint)):
+        raise HTTPException(status_code=400, detail=f"""Handler with name {name}
+            and version {version} does not exist behind endpont {endpoint}""")
+
+@app.delete("/delete")
+def delete_handler(
+    handler: schemas.HandlerDelete,
+    db: Session = Depends(get_db)):
+    # Raise if it does not exist
+    raise_if_handler_does_not_exist(db,
+        name=handler.name, version=handler.version, endpoint=handler.endpoint)
+
+    # TODO: Raise if shadow traffic or prod traffic are not 0
+    # TODO: modify traffic rules
+    # Delete deployment
+    delete_deployment(endpoint_name=handler.endpoint, handler_name=handler.name, 
+        handler_version=handler.version)
+    delete_service(endpoint_name=handler.endpoint,
+        handler_name=handler.name, handler_version=handler.version)
+
+    # Finally delete from database
+    crud.delete_handler(db, name=handler.name, version=handler.version, endpoint=handler.endpoint)
+
 @app.post("/create", response_model=schemas.Handler)
 def create_handler(
         handler: schemas.HandlerCreate,
@@ -30,29 +59,23 @@ def create_handler(
     Creates a handler behind the specified endpoint.
     """
     prod_traffic = shadow_traffic = 0
-    db_endpoint = db.query(models.Endpoint).filter(
-        models.Endpoint.name == handler.endpoint).first()
-    if not db_endpoint:
-        raise HTTPException(status_code=400, detail=f"""Endpoint with name {handler.endpoint} "
-           does not exist""")
-    db_endpoint_id = db_endpoint.id
-    cur_max = len(db.query(models.Handler).filter(
-            models.Handler.id == db_endpoint_id,
-            models.Handler.name == handler.name).all()) - 1
-    if cur_max == -1: # this is the first model of this version
-        version = 0
+    raise_if_endpoint_does_not_exist(db=db, name=handler.endpoint)
+
+    endpoint = crud.get_endpoint(db=db, name=handler.endpoint)
+    cur_max = len(endpoint.handlers) - 1
+    if cur_max == -1: # this is the first model of this endpoint
         prod_traffic = 100
-    if version <= cur_max:
-        raise HTTPException(status_code=400, detail=f"""You specified a version of {version}
-        but the largest one we have is {cur_max}. Please specify a version greater 
-        than {cur_max} and try again.""")
+    if handler.version <= cur_max:
+        raise HTTPException(status_code=400, detail=f"""You specified a version of
+        {handler.version} but the largest one we have is {cur_max}. 
+        Please specify a version greater than {cur_max} and try again.""")
     db_handler = db.query(models.Handler).filter(
-        models.Handler.id == db_endpoint_id,
+        models.Handler.endpoint_id == endpoint.id,
         models.Handler.name == handler.name,
-        models.Handler.version == version).first()
+        models.Handler.version == handler.version).first()
     if db_handler:
         raise HTTPException(status_code=400, detail=f"Handler with name {handler.name} "
-            f"and version {version} already exists")
+            f"and version {handler.version} already exists")
 
     # TODO - add logic to autopopulate code and model version numbers with maxima
 
@@ -72,17 +95,20 @@ def create_handler(
         raise HTTPException(status_code=400, detail=f"Code artifact with name {code_artifact} "
             f"does not yet exist")
 
-    db_handler = models.Handler(name=handler.name, version=version,
-        docker_image=handler.docker_image, endpoint_id=db_endpoint_id,
+    db_handler = models.Handler(name=handler.name, version=handler.version,
+        docker_image=handler.docker_image, endpoint_id=endpoint.id,
         prod_traffic=prod_traffic, shadow_traffic=shadow_traffic)
     db_handler.artifacts.append(code_artifact)
     db_handler.artifacts.append(model_artifact)
 
 
-    create_deployment(handler_name=handler.name, model_artifact=model_artifact.name,
-    model_version=model_artifact.version, code_artifact=code_artifact.name,
-    code_version=code_artifact.version, endpoint_name=handler.endpoint)
-    create_service(handler_name=handler.name)
+    create_deployment(handler_name=handler.name, handler_version=handler.version,
+        model_artifact=model_artifact.name,
+        model_version=model_artifact.version, code_artifact=code_artifact.name,
+        code_version=code_artifact.version, endpoint_name=handler.endpoint)
+
+    create_service(handler_name=handler.name, handler_version=handler.version, 
+        endpoint_name=handler.endpoint)
     add_handler_to_endpoint(endpoint_name=handler.endpoint, handler_name=handler.name)
 
     db.add(db_handler)
@@ -90,7 +116,7 @@ def create_handler(
     db.refresh(db_handler)
 
     return schemas.Handler(
-        name=handler.name, version=version, endpoint=handler.endpoint,
+        name=handler.name, version=handler.version, endpoint=handler.endpoint,
         docker_image=handler.docker_image)
 
 
