@@ -5,10 +5,11 @@ import logging
 import re
 import uvicorn
 
+import crud
+import kubernetes_api as kapi
 import models
 import schemas
 from database import get_db
-from kubernetes_api import create_virtual_service, create_destination_rule
 
 from fastapi import Depends, APIRouter, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -17,6 +18,29 @@ app =  APIRouter(prefix="/endpoints")
 
 
 logger = logging.getLogger('endpoint')
+
+
+def raise_if_endpoint_exists(db, name):
+    '''Raises 400 error if endpoint exists'''
+
+    if crud.endpoint_exists(db, name):
+        raise HTTPException(status_code=400, detail=f"""Endpoint with name {name} "
+            already exists""")
+
+def raise_if_endpoint_does_not_exist(db, name):
+    '''Raises 400 error if endpoint does not exist'''
+
+    if not(crud.endpoint_exists(db, name)):
+        raise HTTPException(status_code=400, detail=f"""Endpoint with name {name} "
+            does not exist""")
+
+def raise_if_associated_handlers(db, name):
+    '''Raises 400 error if endpoint has handlers associated with it'''
+    db_endpoint = crud.get_endpoint(db=db, name=name)
+    if (len(db_endpoint.handlers) != 0):
+        raise HTTPException(status_code=400, detail=f"""Endpoint with name {name}
+            has associated handlers {db_endpoint.handlers}.
+            The endpoint cannot be deleted until those handlers are also deleted.""")
 
 @app.post("/create", response_model=schemas.Endpoint)
 def create_endpoint(
@@ -33,19 +57,13 @@ def create_endpoint(
             A lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters,
             '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', 
             regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')""")
-    db_endpoint = db.query(models.Endpoint).filter(
-        models.Endpoint.name == name).first()
-    if db_endpoint:
-        raise HTTPException(status_code=400, detail=f"Endpoint with name {name} "
-            "already exists.")
+    raise_if_endpoint_exists(db=db, name=name)
+
     logger.debug("we're about to create destination rule")
     #create_destination_rule(endpoint_name=name)
-    create_virtual_service(endpoint_name=name)
+    kapi.create_virtual_service(endpoint_name=name)
 
-    db_endpoint = models.Endpoint(name=name)
-    db.add(db_endpoint)
-    db.commit()
-    db.refresh(db_endpoint)
+    crud.create_endpoint(db=db, name=name)
 
     url=(base_path + name)
     logger.debug("url is %s", url)
@@ -63,6 +81,21 @@ async def list_endpoints(name: str = None, db: Session = Depends(get_db)):
         return db.query(models.Endpoint).all()
 
 
+@app.delete("/delete")
+async def delete_endpoint(endpoint: schemas.Endpoint, db: Session = Depends(get_db)):
+    '''Validates that Endpoint exists, then deletes from DB'''
+
+    # Do some validation
+    raise_if_endpoint_does_not_exist(db=db, name=endpoint.name)
+    raise_if_associated_handlers(db=db, name=endpoint.name)
+
+    # Delete virtual service   
+    kapi.delete_virtual_service(endpoint_name=endpoint.name)
+
+    # Finally, delete from DB
+    crud.delete_endpoint(db=db, name=endpoint.name)
+
+    return f"Endpoint {endpoint.name} successfully deleted."    
 
 
 if __name__ == "__main__":

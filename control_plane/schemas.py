@@ -41,7 +41,7 @@ class EndpointCreate(EndpointBase):
 
 class Endpoint(EndpointBase):
     '''Returned from endpoint list method'''
-    url: AnyUrl
+    url: AnyUrl = ''
 
     class Config:
         '''Database config'''

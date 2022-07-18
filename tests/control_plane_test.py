@@ -12,22 +12,46 @@ import unittest
 base_url = 'http://127.0.0.1:8000' 
 
 # If testing with full Kubernetes setup use this
-base_url = 'http://127.0.0.1/api/v1'
+# base_url = 'http://127.0.0.1/api/v1'
+
 
 class TestEndpoint(unittest.TestCase):
     '''TODO - Use in-memory DB to make these tests have no side-effects'''
 
+    def setUp(self):
+        self.base_url = f'{base_url}/endpoints'
+        print(self.base_url)
+
+    def get_num_endpoints(self):
+        '''Return number of endpoints that exist'''
+        return len(requests.get(f'{self.base_url}/list').json())
+
     def test_endpoint_create(self):
         '''Test Endpoint create'''
-        response = requests.post("/".join([base_url, 'endpoints', 'create']),
+        response = requests.post(f'{self.base_url}/create',
              data=json.dumps({'name': 'doc-rec'}))
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.get_num_endpoints(), 1)
+        response = requests.delete(f'{self.base_url}/delete',
+            json = {'name': 'doc-rec'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.get_num_endpoints(), 0)
 
     def test_endpoint_list(self):
         '''Test filtering logic when listing endpoint'''
         requests.post("/".join([base_url, 'endpoints', 'create']), data = json.dumps({'name': 'doc-rec-list'}))
         output = requests.get("/".join([base_url, 'endpoints', 'list']) + '?name=doc-rec-list')
         self.assertEqual(output.status_code, 200)
+        response = requests.delete(f'{self.base_url}/delete',
+            json = {'name': 'doc-rec-list'})
+        self.assertEqual(response.status_code, 200)
+
+    def test_delete_nonexistent_endpoint(self):
+        '''Deleting a nonexisting endpoint should return a 400'''
+        response = requests.delete(url="/".join([base_url, 'artifacts', 'delete']),
+            json={'name': 'this-endpoint-should-not-exist', 'version': 1})
+        self.assertEqual(response.status_code, 400)
+
 
 # Test model artifact create
 class TestArtifact(unittest.TestCase):

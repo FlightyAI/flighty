@@ -130,22 +130,39 @@ def add_handler_to_endpoint(endpoint_name, handler_name):
         raise e
 
 
-def create_virtual_service(endpoint_name):
-    '''Creates a virtual service with the specified name in the specified namespace'''
+def get_endpoint_body(endpoint_name):
     file_path = os.path.join(__location__, 'virtual-service.yaml')
 
-    myclient = client.CustomObjectsApi()
-    plural = 'virtualservices'
     body = load_and_parse_yaml(
         file_path, 
         endpoint_name=endpoint_name,
         gateway_name=GATEWAY_NAME,
         gateway_namespace=GATEWAY_NAMESPACE)
+    return body
 
+
+def create_virtual_service(endpoint_name):
+    '''Creates a virtual service with the specified name in the specified namespace'''
+
+    myclient = client.CustomObjectsApi()
+    plural = 'virtualservices'
+    body = get_endpoint_body(endpoint_name=endpoint_name)
     try:
         api_response = myclient.create_namespaced_custom_object(
             group=GROUP, namespace=NAMESPACE, version=VERSION, plural=plural, body=body)
         logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling create_namespaced_custom_object: %s\n", e)
+        raise e
+
+def delete_virtual_service(endpoint_name):
+    '''Deletes virtual service with specified name'''
+    myclient = client.CustomObjectsApi()
+    plural = 'virtualservices'
+    try:
+        api_response = myclient.delete_namespaced_custom_object(name=endpoint_name,
+            group=GROUP, namespace=NAMESPACE, version=VERSION, plural=plural)
+        logger.debug(api_response)
+    except ApiException as e:
+        logger.debug("Exception when calling delete_namespaced_custom_object: %s\n", e)
         raise e
