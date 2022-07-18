@@ -1,3 +1,4 @@
 namespace: flighty-ai
 gatewayNamespace: default
 gatewayName: control-plane-gateway
+alembicCommand: upgrade 20653

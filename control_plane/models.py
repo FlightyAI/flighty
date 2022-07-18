@@ -24,6 +24,10 @@ class Artifact(Base):
     version = Column(Integer, nullable=False, default=0)
     path = Column(String(256), nullable=False)
     type = Column(Enum(ArtifactTypeEnum), nullable=False, default="model")
+    handlers = relationship(
+        "Handler", secondary=association_table, back_populates="artifacts"
+    )
+
 
 
 class Endpoint(Base):
@@ -45,8 +49,5 @@ class Handler(Base):
     endpoint_id = Column(Integer, ForeignKey("endpoints.id"))
     endpoint = relationship("Endpoint", back_populates="handlers")
     UniqueConstraint(endpoint_id, name, name='endpoint_handler')
-    artifacts = relationship("Artifact", secondary=association_table)
-
- 
-
+    artifacts = relationship("Artifact", secondary=association_table, back_populates="handlers")
 

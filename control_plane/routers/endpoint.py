@@ -62,5 +62,8 @@ async def list_endpoints(name: str = None, db: Session = Depends(get_db)):
     else:
         return db.query(models.Endpoint).all()
 
+
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

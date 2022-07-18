@@ -15,10 +15,12 @@ class ArtifactBase(BaseModel):
     '''Base class for artifact'''
     name: str
     version: int
-    type: ArtifactTypeEnum
-    path: Union[str, None] = None
 
-class ArtifactCreate(ArtifactBase):
+class ArtifactReturn(ArtifactBase):
+    path: Union[str, None] = None
+    type: ArtifactTypeEnum
+
+class ArtifactCreate(ArtifactReturn):
     '''Used for artifact_create() method'''
     file: UploadFile
 

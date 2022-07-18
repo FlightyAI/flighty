@@ -1,13 +1,13 @@
+import crud
+import file_io
 import models
 import schemas
 from database import get_db
 
-from fastapi import Depends, APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import Depends, APIRouter, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 import logging
-import os
-import shutil
 import uvicorn
 
 logger = logging.getLogger('artifact')
@@ -15,43 +15,22 @@ logger = logging.getLogger('artifact')
 app =  APIRouter(prefix="/artifacts")
 
 
-@app.post("/create", response_model=schemas.Artifact)
+@app.post("/create", response_model=schemas.ArtifactReturn)
 def create_artifact(
         file: UploadFile = File(...), 
         name: str = Form(...), 
         version: int = Form(...), 
         type: models.ArtifactTypeEnum = Form(...), 
         db: Session = Depends(get_db)):
-    db_path = os.path.join('flighty-files', name, str(version))
-    dir_path = os.path.join(os.path.dirname(os.path.abspath('__file__')), db_path)
-    path = os.path.join(dir_path, file.filename)
-    db_artifact = db.query(models.Artifact).filter(
-        models.Artifact.name == name,
-        models.Artifact.version == version).first()
-    if db_artifact:
-        raise HTTPException(status_code=400, detail=f"Artifact with name {name} "
-            f"and version {version} already exists")
-    db_artifact = models.Artifact(name=name, version=version, 
-        path=file.filename, type=type)
-    db.add(db_artifact)
-    db.commit()
-    db.refresh(db_artifact)
 
-    # Write file to mounted volume in a place that handlers 
-    # will be able to find it
-    os.makedirs(dir_path, exist_ok=True)
-    with open(path, 'wb') as f:
-        f.write(file.file.read())
-        logger.info(f'wrote file out to path {path}')
-    
-    # unpack zip file if it is a zip
-    try:
-        shutil.unpack_archive(path, dir_path) 
-        logger.info('archive deteced, unpacking...')
-        os.remove(path)
-    except shutil.ReadError as e: # not a zip file
-        pass
-    return db_artifact
+    crud.raise_if_artifact_exists(db, name, version)
+
+    artifact_dir_path = file_io.write_artifact(file=file, name=name, version=version)
+
+    crud.create_artifact(db, name=name, version=version, path=artifact_dir_path, type=type)
+
+    return_artifact = schemas.ArtifactReturn(name=name, version=version, type=type, path=artifact_dir_path)
+    return return_artifact
 
 @app.get("/list")
 async def list_artifacts(name: str = None, db: Session = Depends(get_db)):
@@ -59,6 +38,23 @@ async def list_artifacts(name: str = None, db: Session = Depends(get_db)):
         return db.query(models.Artifact).filter_by(name=name).all()
     else:
         return db.query(models.Artifact).all()
+
+@app.delete("/delete")
+async def delete_artifact(artifact: schemas.Artifact, db: Session = Depends(get_db)):
+    '''Validates that artifact exists, then deletes from filesystem and DB'''
+
+    # Do some validation
+    crud.raise_if_artifact_does_not_exist(db=db, name=artifact.name, version=artifact.version)
+    crud.raise_if_associated_handlers(db=db, name=artifact.name, version=artifact.version)
+
+    # Delete from file storage
+    file_io.delete_artifact(db=db, name=artifact.name, version=artifact.version)
+
+    # Finally, delete from DB
+    crud.delete_artifact(db=db, name=artifact.name, version=artifact.version)
+
+    return f"Artifact {artifact.name} with version {artifact.version} successfully deleted."    
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

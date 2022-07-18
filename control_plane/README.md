@@ -34,7 +34,13 @@ docker run -p 8000:80 -v /Users/gkv/Startup/flighty/flighty-files:/code/flighty-
 ```
 docker build . -f dbmigrate.Dockerfile -t gvashishtha/flighty:alembic
 docker run --env DB_URL=host.docker.internal \
-  gvashishtha/flighty:alembic upgrade 26dd889ef799
+  gvashishtha/flighty:alembic upgrade 20653
+  history -rcurrent:+2
+```
+For debugging migration not found do:
+```
+docker run --env DB_URL=host.docker.internal \
+  gvashishtha/flighty:alembic history -rcurrent:+1
 ```
 
 ## Pushing
