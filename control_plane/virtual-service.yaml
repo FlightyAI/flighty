@@ -19,6 +19,7 @@ spec:
       uri: "/"
     route:
       - destination:
-          host: {{ endpoint_name }}
+          # This gets replaced once we create a handler
+          host: placeholder
           port:
             number: 80

@@ -17,7 +17,7 @@ docker push gvashishtha/flighty:model_server
 ## Running to test
 
 ```
-docker run -p 80:80 -v /Users/gkv/Startup/flighty/model_server/customer_code:/code/customer_code \
+docker run -p 8001:80 -v /Users/gkv/Startup/flighty/model_server/customer_code:/code/customer_code \
 -v /Users/gkv/Startup/flighty/model_server:/code/flighty-files/first-artifact/2 \
   gvashishtha/flighty:model_server 
 ```

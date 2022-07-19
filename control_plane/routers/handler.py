@@ -28,7 +28,7 @@ def raise_if_handler_does_not_exist(db, name, version, endpoint):
 
     if not(crud.handler_exists(db, name, version, endpoint)):
         raise HTTPException(status_code=400, detail=f"""Handler with name {name}
-            and version {version} does not exist behind endpont {endpoint}""")
+            and version {version} does not exist behind endpoint {endpoint}""")
 
 @app.delete("/delete")
 def delete_handler(
@@ -107,9 +107,10 @@ def create_handler(
         model_version=model_artifact.version, code_artifact=code_artifact.name,
         code_version=code_artifact.version, endpoint_name=handler.endpoint)
 
-    create_service(handler_name=handler.name, handler_version=handler.version, 
+    create_service(handler_name=handler.name, handler_version=handler.version,
         endpoint_name=handler.endpoint)
-    add_handler_to_endpoint(endpoint_name=handler.endpoint, handler_name=handler.name)
+    add_handler_to_endpoint(endpoint_name=handler.endpoint, handler_name=handler.name,
+        handler_version=handler.version)
 
     db.add(db_handler)
     db.commit()

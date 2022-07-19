@@ -6,17 +6,17 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ handler_name }}
+      app: {{ deployment_name }}
   strategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        app: {{ handler_name }}
+        app: {{ deployment_name }}
     spec:
       containers:
         - image: docker.io/gvashishtha/flighty:model_server
-          name: controlplane
+          name: model-server
           ports:
             - containerPort: 80
               name: http

@@ -3,6 +3,7 @@
 
 import json
 import os
+import time
 
 import requests
 import unittest
@@ -43,7 +44,21 @@ def delete_handler(**kwargs):
 def delete_endpoint(**kwargs):
     '''Delete specified endpoint'''
     return requests.delete(f'{base_url}/endpoints/delete',
-            json = kwargs)
+        json=kwargs)
+
+def invoke_endpoint(endpoint_name, **kwargs):
+    '''Invokes the endpoint with provided arguments'''
+    print(f'kwargs are {kwargs}')
+    response = requests.post(f'http://127.0.0.1/{endpoint_name}/infer',
+        json=kwargs)
+    retry_count = 0
+    while retry_count < 10 and response.status_code != 200:
+        time.sleep(2)
+        response = requests.post(f'http://127.0.0.1/{endpoint_name}/infer',
+        json=kwargs)
+        retry_count += 1
+        print(f'invoke retry # {retry_count}')
+    return response
 
 class TestInvoke(unittest.TestCase):
     # Create handler with customer code archive
@@ -51,19 +66,27 @@ class TestInvoke(unittest.TestCase):
     def test_invoke(self):
         '''Test that invoking dummy model works'''
         with open('./README.md', 'rb') as f:
-            create_artifact(file=f, name=(None, 'model-artifact'),
+            response = create_artifact(file=f, name=(None, 'model-artifact'),
                 version=(None, 1), type=(None, 'model'))
+            print(response.text)
 
         with open('./model_server/customer_code/Archive.zip', 'rb') as f:
-            create_artifact(file=f, name=(None, 'code-artifact'),
+            response = create_artifact(file=f, name=(None, 'code-artifact'),
                 version=(None, 1), type=(None, 'code'))
+            print(response.text)
         create_endpoint(name='doc-rec')
-        create_handler(name='rules', version=1, model_artifact='model-artifact',
+        response = create_handler(name='rules', version=1, model_artifact='model-artifact',
             code_artifact='code-artifact', model_artifact_version=1, code_artifact_version=1,
             endpoint='doc-rec')
-        
-        
-    pass
+        self.assertEqual(response.status_code, 200, msg=response.text)
+        response = invoke_endpoint(endpoint_name='doc-rec', data = {'id':0, 'name': 'John Doe'})
+
+        self.assertEqual(response.status_code, 200, msg=response.text)
+        delete_handler(name='rules', version=1, endpoint='doc-rec')
+        delete_artifact(name='model-artifact', version=1)
+        delete_artifact(name='code-artifact', version=1)
+        delete_endpoint(name='doc-rec')
+
 
 class TestHandler(unittest.TestCase):
     @classmethod

@@ -77,7 +77,8 @@ def create_deployment(handler_name, handler_version, model_artifact,
 
     file_path = os.path.join(__location__, 'deployment-handler.yaml')
     deployment_name = get_unique_handler_name(handler_name=handler_name, 
-        handler_version=handler_version, endpoint_name=endpoint_name)
+        handler_version=handler_version, endpoint_name=endpoint_name,
+        )
     body = load_and_parse_yaml(
         file_path, deployment_name=deployment_name, model_artifact=model_artifact,
         model_version=model_version, code_version=code_version,
@@ -120,10 +121,10 @@ def add_handler_to_endpoint(endpoint_name, handler_name, handler_version):
     myclient = client.CustomObjectsApi()
     plural = 'virtualservices'
     response=myclient.get_namespaced_custom_object(
-        group=GROUP, 
-        version=VERSION, 
-        namespace=NAMESPACE, 
-        plural=plural, 
+        group=GROUP,
+        version=VERSION,
+        namespace=NAMESPACE,
+        plural=plural,
         name=endpoint_name)
 
     # TODO - this is EXTREMELY brittle, need to add logic to deal with lists of routes
@@ -146,23 +147,19 @@ def get_unique_handler_name(endpoint_name, handler_name, handler_version):
     '''Should be called by any service trying to derive the handler name'''
     return f'{endpoint_name}-{handler_name}-{handler_version}'
 
-def get_endpoint_body(endpoint_name):
-    file_path = os.path.join(__location__, 'virtual-service.yaml')
-
-    body = load_and_parse_yaml(
-        file_path, 
-        endpoint_name=endpoint_name,
-        gateway_name=GATEWAY_NAME,
-        gateway_namespace=GATEWAY_NAMESPACE)
-    return body
-
 
 def create_virtual_service(endpoint_name):
     '''Creates a virtual service with the specified name in the specified namespace'''
 
     myclient = client.CustomObjectsApi()
     plural = 'virtualservices'
-    body = get_endpoint_body(endpoint_name=endpoint_name)
+
+    file_path = os.path.join(__location__, 'virtual-service.yaml')
+    body = load_and_parse_yaml(
+        file_path, 
+        endpoint_name=endpoint_name,
+        gateway_name=GATEWAY_NAME,
+        gateway_namespace=GATEWAY_NAMESPACE)
     try:
         api_response = myclient.create_namespaced_custom_object(
             group=GROUP, namespace=NAMESPACE, version=VERSION, plural=plural, body=body)

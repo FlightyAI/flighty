@@ -8,5 +8,5 @@ spec:
     - port: 80
       name: http
   selector:
-    app: {{ handler_name }}
+    app: {{ service_name }}
   clusterIP: None
