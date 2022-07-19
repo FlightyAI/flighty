@@ -23,4 +23,4 @@ async def root():
 
 # TODO - I think port contention here is what's messing up istio, need to set up gateway to forward to this port from 80
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

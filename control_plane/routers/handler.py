@@ -104,7 +104,7 @@ def create_handler(
 
 
     create_deployment(handler_name=handler.name, handler_version=handler.version,
-        model_artifact=model_artifact.name,
+        model_artifact=model_artifact.name, docker_image=handler.docker_image,
         model_version=model_artifact.version, code_artifact=code_artifact.name,
         code_version=code_artifact.version, endpoint_name=handler.endpoint)
 

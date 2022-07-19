@@ -71,7 +71,7 @@ def create_destination_rule(endpoint_name, namespace=NAMESPACE):
         raise e
 
 def create_deployment(handler_name, handler_version, model_artifact, 
-    model_version, code_artifact, code_version, endpoint_name):
+    model_version, code_artifact, code_version, endpoint_name, docker_image):
     '''Creates a deployment using the deployment-handler.yaml template'''
 
     file_path = os.path.join(__location__, 'deployment-handler.yaml')
@@ -82,7 +82,7 @@ def create_deployment(handler_name, handler_version, model_artifact,
         file_path, deployment_name=deployment_name, model_artifact=model_artifact,
         model_version=model_version, code_version=code_version,
         code_artifact=code_artifact, endpoint_name=endpoint_name, handler_name=handler_name,
-        namespace=NAMESPACE)
+        namespace=NAMESPACE, docker_image=docker_image)
     
     apps_client = client.AppsV1Api()
     try:

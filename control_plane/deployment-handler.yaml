@@ -15,7 +15,7 @@ spec:
         app: {{ deployment_name }}
     spec:
       containers:
-        - image: docker.io/gvashishtha/flighty:model_server
+        - image: {{ docker_image }}
           name: model-server
           ports:
             - containerPort: 80
