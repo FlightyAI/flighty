@@ -10,10 +10,10 @@ import unittest
 
 
 # If testing with Docker use this
-base_url = 'http://127.0.0.1:8002'
+# base_url = 'http://127.0.0.1:8002'
 
 # If testing with full Kubernetes setup use this
-# base_url = 'http://127.0.0.1/api/v1'
+base_url = 'http://127.0.0.1/api/v1'
 
 
 def get_num_artifacts():

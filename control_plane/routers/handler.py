@@ -13,6 +13,7 @@ from kubernetes_api import create_deployment, create_service, \
 from .artifact import list_artifacts
 from .endpoint import raise_if_endpoint_does_not_exist, raise_if_endpoint_exists
 
+import logging
 import uvicorn
 
 from database import get_db
@@ -22,6 +23,7 @@ from sqlalchemy.orm import Session
 
 app = APIRouter(prefix="/handlers")
 
+logger = logging.getLogger('artifact')
 
 
 def raise_if_handler_does_not_exist(db, name, version, endpoint):
@@ -102,7 +104,7 @@ def create_handler(
     db_handler.artifacts.append(code_artifact)
     db_handler.artifacts.append(model_artifact)
 
-
+    logger.debug('sending %s as docker image', handler.docker_image)
     create_deployment(handler_name=handler.name, handler_version=handler.version,
         model_artifact=model_artifact.name, docker_image=handler.docker_image,
         model_version=model_artifact.version, code_artifact=code_artifact.name,

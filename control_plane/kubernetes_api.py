@@ -84,6 +84,8 @@ def create_deployment(handler_name, handler_version, model_artifact,
         code_artifact=code_artifact, endpoint_name=endpoint_name, handler_name=handler_name,
         namespace=NAMESPACE, docker_image=docker_image)
     
+    logger.debug('substituted %s as docker image', docker_image)
+    
     apps_client = client.AppsV1Api()
     try:
         api_response = apps_client.create_namespaced_deployment(
