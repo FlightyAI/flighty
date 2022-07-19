@@ -45,7 +45,7 @@ def load_and_parse_yaml(file_path, **kwargs):
     # deployment_template = yaml.safe_load(file_content)
     deployment_template = Template(file_content)
     deployment_template = yaml.safe_load(deployment_template.render(**kwargs))
-    logger.debug('deployment template is %s', deployment_template)
+
     return deployment_template
 
 def create_destination_rule(endpoint_name, namespace=NAMESPACE):
@@ -65,7 +65,6 @@ def create_destination_rule(endpoint_name, namespace=NAMESPACE):
     try:
         api_response = myclient.create_namespaced_custom_object(
             group=GROUP, namespace=namespace, version=VERSION, plural=plural, body=body)
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug(
             "Exception when calling CustomObjectsApi->create_cluster_custom_object: %s\n", e)
@@ -90,7 +89,6 @@ def create_deployment(handler_name, handler_version, model_artifact,
         api_response = apps_client.create_namespaced_deployment(
             body=body, namespace=NAMESPACE
         )
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling create_namespaced_deployment: %s\n", e)
         raise e
@@ -109,7 +107,6 @@ def create_service(handler_name, handler_version, endpoint_name):
         api_response = api.create_namespaced_service(
             body=body, namespace=NAMESPACE
         )
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling create_namespaced_service: %s\n", e)
         raise e
@@ -138,7 +135,6 @@ def add_handler_to_endpoint(endpoint_name, handler_name, handler_version):
     try:
         api_response = myclient.patch_namespaced_custom_object(name=endpoint_name,
             group=GROUP, namespace=NAMESPACE, version=VERSION, plural=plural, body=response)
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling create_namespaced_custom_object: %s\n", e)
         raise e
@@ -163,7 +159,6 @@ def create_virtual_service(endpoint_name):
     try:
         api_response = myclient.create_namespaced_custom_object(
             group=GROUP, namespace=NAMESPACE, version=VERSION, plural=plural, body=body)
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling create_namespaced_custom_object: %s\n", e)
         raise e
@@ -175,7 +170,6 @@ def delete_virtual_service(endpoint_name):
     try:
         api_response = myclient.delete_namespaced_custom_object(name=endpoint_name,
             group=GROUP, namespace=NAMESPACE, version=VERSION, plural=plural)
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling delete_namespaced_custom_object: %s\n", e)
         raise e
@@ -188,7 +182,6 @@ def delete_deployment(handler_name, handler_version, endpoint_name):
     try:
         api_response = apps_client.delete_namespaced_deployment(name=deployment_name,
             namespace=NAMESPACE)
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling delete_namespaced_custom_object: %s\n", e)
         raise e
@@ -203,7 +196,6 @@ def delete_service(handler_name, handler_version, endpoint_name):
         api_response = api.delete_namespaced_service(
             name=service_name, namespace=NAMESPACE
         )
-        logger.debug(api_response)
     except ApiException as e:
         logger.debug("Exception when calling delete_namespaced_service: %s\n", e)
         raise e

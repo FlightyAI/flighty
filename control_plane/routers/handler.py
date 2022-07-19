@@ -10,6 +10,7 @@ import schemas
 
 from kubernetes_api import create_deployment, create_service, \
     add_handler_to_endpoint, delete_deployment, delete_service
+from .artifact import list_artifacts
 from .endpoint import raise_if_endpoint_does_not_exist, raise_if_endpoint_exists
 
 import uvicorn
@@ -121,6 +122,22 @@ def create_handler(
         docker_image=handler.docker_image)
 
 
+@app.get("/get", response_model=schemas.HandlerGet)
+async def get_handler(handler: schemas.HandlerBase, db: Session = Depends(get_db)):
+    '''Get a handler if it exists or raise an error if not'''
+    to_return = crud.get_handler(db=db, name=handler.name, version=handler.version,
+        endpoint=handler.endpoint)
+    if to_return is None:
+        raise HTTPException(status_code=400, detail=f"""Handler with name {handler.name}
+            and version {handler.version} behind endpoint {handler.endpoint}
+            does not exist""")
+    code_artifacts = await list_artifacts(type=schemas.ArtifactTypeEnum.code, db=db)
+    model_artifacts = await list_artifacts(type=schemas.ArtifactTypeEnum.model, db=db)
+    returning = schemas.HandlerGet(
+        name=to_return.name, version=to_return.version, endpoint=handler.endpoint,
+        model_artifacts=model_artifacts,
+        code_artifact=code_artifacts[0])
+    return returning
 
 @app.get("/list")
 async def list_handlers(name: str = None, db: Session = Depends(get_db)):

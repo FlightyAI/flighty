@@ -4,7 +4,7 @@ schemas.py
 Database schemas for Flighty control plane objects, used in type hints
 """
 
-from typing import Union
+from typing import List, Union
 from fastapi import UploadFile
 from models import ArtifactTypeEnum
 
@@ -19,6 +19,10 @@ class ArtifactBase(BaseModel):
 class ArtifactReturn(ArtifactBase):
     path: Union[str, None] = None
     type: ArtifactTypeEnum
+
+    class Config:
+        '''Database config'''
+        orm_mode=True
 
 class ArtifactCreate(ArtifactReturn):
     '''Used for artifact_create() method'''
@@ -66,6 +70,10 @@ class Handler(HandlerBase):
     class Config:
         '''Database config'''
         orm_mode = True
+
+class HandlerGet(HandlerBase):
+    model_artifacts: List[ArtifactReturn]
+    code_artifact: ArtifactReturn
 
 class HandlerCreate(HandlerBase):
     model_artifact: str

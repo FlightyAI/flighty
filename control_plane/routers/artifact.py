@@ -56,9 +56,9 @@ def create_artifact(
     return return_artifact
 
 @app.get("/list")
-async def list_artifacts(name: str = None, db: Session = Depends(get_db)):
-    if name:
-        return db.query(models.Artifact).filter_by(name=name).all()
+async def list_artifacts(type: schemas.ArtifactTypeEnum = None, db: Session = Depends(get_db)):
+    if type:
+        return db.query(models.Artifact).filter_by(type=type).all()
     else:
         return db.query(models.Artifact).all()
 

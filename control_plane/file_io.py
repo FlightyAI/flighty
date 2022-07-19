@@ -43,5 +43,5 @@ def write_artifact(file, name, version):
 
 def delete_artifact(db, name, version):
     '''Deletes the directory at the path specified in the database'''
-    artifact = crud.get_artifact(db=db, name=name, version=version)
-    shutil.rmtree(artifact.path)
+    path = get_artifact_dir_path(name=name, version=version)
+    shutil.rmtree(path)
