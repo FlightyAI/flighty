@@ -44,10 +44,9 @@ def create_handler(**kwargs):
     return requests.post(f'{base_url}/handlers/create', 
         json=kwargs)
 
-def get_handler(**kwargs):
+def get_handler(name, version, endpoint):
     '''Get handler with specified args'''
-    return requests.get(f'{base_url}/handlers/get', 
-        json=kwargs)
+    return requests.get(f'{base_url}/handlers/get?name={name}&version={version}&endpoint={endpoint}')
 
 
 def delete_handler(**kwargs):
