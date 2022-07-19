@@ -10,10 +10,10 @@ import unittest
 
 
 # If testing with Docker use this
-base_url = 'http://127.0.0.1:8000'
+# base_url = 'http://127.0.0.1:8000'
 
 # If testing with full Kubernetes setup use this
-# base_url = 'http://127.0.0.1/api/v1'
+base_url = 'http://127.0.0.1/api/v1'
 
 
 def create_artifact(**kwargs):
@@ -57,8 +57,9 @@ def invoke_endpoint(endpoint_name, **kwargs):
         response = requests.post(f'http://127.0.0.1/{endpoint_name}/infer',
         json=kwargs)
         retry_count += 1
-        print(f'invoke retry # {retry_count}')
+        print(f'invoke retry # {retry_count}, current response code {response.status_code}')
     return response
+
 
 class TestInvoke(unittest.TestCase):
     # Create handler with customer code archive
