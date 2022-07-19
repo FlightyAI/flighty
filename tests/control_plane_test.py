@@ -16,6 +16,14 @@ import unittest
 base_url = 'http://127.0.0.1/api/v1'
 
 
+def get_num_artifacts():
+    '''Return number of handlers that exist'''
+    return len(requests.get(f'{base_url}/artifacts/list').json())
+
+def get_num_handlers():
+    '''Return number of handlers that exist'''
+    return len(requests.get(f'{base_url}/handlers/list').json())
+
 def create_artifact(**kwargs):
     '''Create artifact with specified args'''
     return requests.post(f'{base_url}/artifacts/create',
@@ -52,6 +60,8 @@ def invoke_endpoint(endpoint_name, **kwargs):
     response = requests.post(f'http://127.0.0.1/{endpoint_name}/infer',
         json=kwargs)
     retry_count = 0
+
+    # Envoy proxy returns 503s while it starts up, I guess should use a readiness probe
     while retry_count < 10 and response.status_code != 200:
         time.sleep(2)
         response = requests.post(f'http://127.0.0.1/{endpoint_name}/infer',
@@ -116,9 +126,7 @@ class TestHandler(unittest.TestCase):
     def setUp(self):
         self.base_url = f'{base_url}/handlers'
 
-    def get_num_handlers(self):
-        '''Return number of handlers that exist'''
-        return len(requests.get(f'{self.base_url}/list').json())
+
     
     def test_duplicate_create(self):
         '''Should return a 400 if we create a handler with same name as existing'''
@@ -137,9 +145,9 @@ class TestHandler(unittest.TestCase):
         response = create_handler(name='rules', version=1, model_artifact='model-artifact',
             code_artifact='code-artifact', model_artifact_version=1, code_artifact_version=1,
             endpoint='doc-rec')
-        self.assertEqual(self.get_num_handlers(), 1, msg=response.text)
+        self.assertEqual(get_num_handlers(), 1, msg=response.text)
         response = delete_handler(name='rules', version=1, endpoint='doc-rec')
-        self.assertEqual(self.get_num_handlers(), 0, msg=response.text)
+        self.assertEqual(get_num_handlers(), 0, msg=response.text)
 
     def test_delete_endpoint_with_handler(self):
         '''An endpoint with an associated handler should not be deleted'''
@@ -204,10 +212,10 @@ class TestArtifact(unittest.TestCase):
         with open('./README.md', 'rb') as f:
             response = create_artifact(file=f, name=(None, 'model-artifact'),
                 version=(None, 1), type=(None, 'model'))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, msg=response.text)
         self.assertEqual(self.get_num_artifacts(), 1)
         response = delete_artifact(name='model-artifact', version=1)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, msg=response.text)
         self.assertEqual(self.get_num_artifacts(), 0)
 
     
