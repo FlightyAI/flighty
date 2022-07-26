@@ -81,6 +81,7 @@ class TestInvoke(unittest.TestCase):
     # Invoke that handler
     # We'll have to test this somewhere else because when testing locally 
     # the mounting of archives doesn't work
+    # One option - create the correct artifacts manually in the running kubernetes server
     pass
 
     # def test_invoke(self):
