@@ -10,6 +10,14 @@ spec:
   http:
     - match:
         - uri:
+            prefix: /metrics # catch all rule
+      route:
+        - destination:
+            host: triton-inference-server-service
+            port:
+              number: 8002
+    - match:
+        - uri:
             prefix: / # catch all rule
       route:
         - destination:

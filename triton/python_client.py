@@ -1,7 +1,9 @@
 import tritonclient.http as httpclient
 import numpy as np
 
-triton_client = httpclient.InferenceServerClient(url='localhost:8000')
+# Use when running Triton in Docker with port forwarding
+#triton_client = httpclient.InferenceServerClient(url='localhost:8000')
+triton_client = httpclient.InferenceServerClient(url='127.0.0.1')
 
 def infer():
     inputs = []

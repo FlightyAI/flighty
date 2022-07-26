@@ -60,16 +60,28 @@ Then do the load test again:
 
 `python python_client.py`
 
+## Port forward Kiali
 
+`kubectl port-forward svc/kiali 20001:20001 -n istio-system`
 ## Deploy with Helm chart
 
 `./initialize_helm.sh`
+
+Check liveness: `curl -v 127.0.0.1/v2/health/ready`
+
+Rebuild prometheus pointing at port 80 instead of port 8000.
+
+Then point Python client and localhost and run load test.
 
 ## Run a Horizontal Pod Autoscaler
 
 Move the deployment to a helm chart and deploy both pieces together. Confirm that a second replica does spin up when using busybox to create load.
 
 ## Write code that can listen for the scale up event
+
+## Use proper load test
+https://www.jeremyjordan.me/ml-monitoring/
+(locust)
 
 ## Write code that can get the GPU requirements of all models AND the number of requests
 
