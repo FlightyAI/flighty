@@ -25,16 +25,20 @@ docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:22.06-py3-sdk
 
 ## Run Prometheus (localhost)
 
+Prometheus needs to consume the metrics coming off the pod in order for us to visualize those metrics in Grafana.
 ```
 docker build . -f prometheus.dockerfile -t gvashishtha/flighty:prometheus
 docker run -p 9090:9090 gvashishtha/flighty:prometheus
 ```
 
-## Install grafana
+## Install Grafana
+
+For Mac:
 
 ```
-curl -O https://dl.grafana.com/enterprise/release/grafana-enterprise-9.0.5.darwin-amd64.tar.gz
-tar -zxvf grafana-enterprise-9.0.5.darwin-amd64.tar.gz
+brew update
+brew install grafana
+brew services start grafana
 ```
 
 Right now the image has models baked in. Once we're comfortable with the models we'll want to mount them.
@@ -46,6 +50,20 @@ Now take the image you just built and run it in a deployment
 ```
 k create -f triton/triton-deployment.yaml
 ```
+
+Expose the pods: `k expose pod/<POD NAME>`
+
+Port forward: `k port-forward services/triton-inference-server-85b79f6b6-g8cl9 8000:8000 8001:
+8001 8002:8002`
+
+Then do the load test again:
+
+`python python_client.py`
+
+
+## Deploy with Helm chart
+
+`./initialize_helm.sh`
 
 ## Run a Horizontal Pod Autoscaler
 
