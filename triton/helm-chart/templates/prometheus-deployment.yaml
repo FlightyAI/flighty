@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton-inference-server
+  namespace: flighty-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: triton-inference-server
+  template:
+    metadata:
+      labels:
+        app: triton-inference-server
+    spec:
+      containers:
+        - name: triton-server
+          image: "docker.io/gvashishtha/flighty:triton"
+          #args: ["tritonserver", "--model-repository=/models"]
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 8001
+              name: grpc
+            - containerPort: 8002
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /v2/health/live
+              port: http
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            httpGet:
+              path: /v2/health/ready
+              port: http
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      imagePullSecrets:
+        - name: regcred
