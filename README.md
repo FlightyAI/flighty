@@ -1,3 +1,53 @@
+# Cloud setup
+
+## Create AKS cluster
+
+`az group create --name AzureRg --location northcentralus`
+
+```
+az aks create -g AzureRg -n FlightyAKS \
+--node-count 1 \
+  --generate-ssh-keys \
+  	--enable-cluster-autoscaler \
+	--min-count 1 \
+	--max-count 1
+```
+
+## Set correct kubeconfig and Azure context
+
+```
+k config use-context FlightyAKS
+az account set --name 'Microsoft Azure Sponsorship'
+az config set defaults.group=AzureRg
+
+```
+
+## Add spot node pool
+```
+az aks nodepool add \
+    	--cluster-name FlightyAKS \
+    	--name spotnodepool \
+    	--priority Spot \
+    	--node-vm-size Standard_A2_v2 \
+    	--node-count 1 \
+    	--node-osdisk-size 30 \
+    	--enable-cluster-autoscaler \
+    	--min-count 1 \
+    	--max-count 3
+
+```
+Taint the system node pool so we only use spot node pool (I think this might resolve permissions issues in mySQL container)
+
+`k taint nodes aks-nodepool1-31754575-vmss000000 CriticalAddonsOnly=true:NoSchedule`
+
+## Connect to cluster:
+
+`az aks get-credentials --resource-group AzureRg --name FlightyAKS `
+
+Register Azure storage provider:
+
+`az provider register --namespace Microsoft.Storage`
+
 # Local setup
 
 ## Running tests

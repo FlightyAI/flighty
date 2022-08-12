@@ -2,3 +2,4 @@ namespace: flighty-ai
 gatewayNamespace: default
 gatewayName: control-plane-gateway
 alembicCommand: upgrade 3aeb456 # --version
+storageClassName: flighty-azurefile # hostpath (for local)

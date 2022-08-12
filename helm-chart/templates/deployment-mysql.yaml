@@ -26,10 +26,16 @@ spec:
             - containerPort: 3306
               name: mysql
           volumeMounts:
-            - name: mysql-persistent-storage
-              mountPath: /var/lib/mysql
+            # TODO - see if we really need this, because it seems to be source of mySQL initialization errors in Azure
+            # - name: mysql-persistent-storage 
+            #   mountPath: /var/lib/mysql
             - name: mysql-initdb
               mountPath: /docker-entrypoint-initdb.d
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
       volumes:
         - name: mysql-persistent-storage
           persistentVolumeClaim:

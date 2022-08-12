@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: model-store-pvc
 spec:
-  storageClassName: hostpath
+  storageClassName: {{ .Values.storageClassName }}
   accessModes:
     - ReadWriteMany
   resources:

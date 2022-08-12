@@ -38,5 +38,10 @@ spec:
                 curl -fsI -X POST http://localhost:15020/quitquitquit
               fi
               exit $x
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: regcred

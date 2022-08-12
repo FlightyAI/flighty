@@ -42,6 +42,11 @@ spec:
             - name: model-store
               mountPath: /code/flighty-files
           imagePullPolicy: Always
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
       volumes:
         - name: model-store
           persistentVolumeClaim:
