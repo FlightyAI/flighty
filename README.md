@@ -26,13 +26,12 @@ az config set defaults.group=AzureRg
 ```
 az aks nodepool add \
     	--cluster-name FlightyAKS \
-    	--name spotnodepool \
-    	--priority Spot \
+    	--name nodepool \
     	--node-vm-size Standard_A2_v2 \
     	--node-count 1 \
     	--node-osdisk-size 30 \
     	--enable-cluster-autoscaler \
-    	--min-count 1 \
+    	--min-count 0 \
     	--max-count 3
 
 ```
@@ -127,14 +126,26 @@ First install Prometheus for Istio add-on:
 `kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.14/samples/addons/prometheus.yaml`
 
 ```
-helm install \                                            
-  --namespace istio-system \
+helm install \
+ --namespace istio-system \
   --set auth.strategy="anonymous" \
   --repo https://kiali.org/helm-charts \
   kiali-server \
   kiali-server
 kubectl port-forward svc/kiali 20001:20001 -n istio-system
 ```
+
+Note that kiali won't be able to schedule on spot node pool, so you'll need to edit the deployment to add:
+
+```
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+```
+
+and then delete the pods to force this toleration to be applied.
 
 ### Install and configure istio
 
