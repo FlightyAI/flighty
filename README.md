@@ -89,7 +89,9 @@ Query the database in MySQL workbench to confirm the database is now serving.
 
 ## Port-forward control plane
 
-`kubectl port-forward service/controlplane-external 8001:80`
+This shouldn't be necessary if we're using istio. Control plane will be available on port 80.
+
+`kubectl port-forward service/controlplane-external 8002:80`
 
 ## Upload required files
 
