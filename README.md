@@ -1,6 +1,6 @@
 # FlightyAI
 
-This is the source code for flightyAI, an API for deploying ML models as REST APIs on your own Kubernetes cluster. Flighty is packaged as a [Helm chart](https://helm.sh/) for easy installation.
+This is the source code for FlightyAI, an API for deploying ML models as REST APIs on your own Kubernetes cluster. Flighty is packaged as a [Helm chart](https://helm.sh/) for easy installation.
 
 ## Local setup
 
@@ -37,21 +37,9 @@ Because we're using Istio, your control plane docs should now be available at 12
 
 ### Deploying your first model
 
-Open the web UI at 127.0.0.1:8001/docs and upload two files:
+Follow the [instructions here](https://github.com/FlightyAI/flighty-sample) to deploy your first model.
 
-```
-file: Artifact.zip (containing zipped Python main.py with init() and predict())
-name: code-artifact
-version: 1
-type: code
-```
-
-```
-file: Artifact.zip
-name: first-artifact
-version: 1
-type: code
-```
+To see a video demo of Flighty in action, check out [this video](https://www.loom.com/share/e0f5b13078b1482ba025cda26e0c2ef3).
 
 ### Cleaning up
 
@@ -60,8 +48,7 @@ Clean up with: `./clean-up_helm.sh`
 The script [clean-up_helm.sh](./clean-up_helm.sh) uninstalls the Flighty Helm chart and deletes the flighty-ai namespace.
 
 
-
-## Cloud setup
+## Cloud setup (WIP, do not use)
 
 ### Create AKS cluster
 
