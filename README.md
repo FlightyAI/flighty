@@ -65,7 +65,8 @@ Then open up the URL
   ```
   upstream connect error or disconnect/reset before headers. 
   reset reason: connection termination
-  ```, 
+  ```
+  , 
 what finally solved it for me was to just uninstall and reinstall istio.
 
 ### Uninstalling and reinstalling istio
